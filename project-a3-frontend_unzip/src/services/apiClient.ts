@@ -1,0 +1,87 @@
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
+
+const backendId = (id: string) => {
+  const knownIds: Record<string, string> = {
+    "prod-1": "PROD-1001",
+    "prod-2": "PROD-1002",
+    "case-1024": "CASE-1024",
+  };
+  return knownIds[id] ?? id;
+};
+
+interface ApiErrorBody {
+  detail?: string;
+}
+
+export interface ApiUser {
+  id: string;
+  name: string;
+  email: string;
+  role: "DEVELOPER" | "CUSTOMER";
+}
+
+interface LoginResponse {
+  access_token: string;
+  user: ApiUser;
+}
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const token = localStorage.getItem("a3_access_token");
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as ApiErrorBody;
+    throw new Error(body.detail ?? `Request failed (${response.status})`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export async function loginApi(email: string, password: string): Promise<ApiUser> {
+  const result = await request<LoginResponse>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+  localStorage.setItem("a3_access_token", result.access_token);
+  return result.user;
+}
+
+export interface SentinelAnalysisResponse {
+  analysis: {
+    sentiment: "Positive" | "Neutral" | "Negative";
+    emotion: string;
+    severity: "Low" | "Medium" | "High" | "Critical";
+    category: string;
+    rootCause: string;
+    customerProblem: string;
+    safetyConcern: boolean;
+    confidence: number;
+    missingInformation: string[];
+  };
+}
+
+export function analyzeReviewApi(reviewText: string, rating: number, productId: string) {
+  return request<SentinelAnalysisResponse>("/api/reviews/analyze", {
+    method: "POST",
+    body: JSON.stringify({ review_text: reviewText, rating, product_id: backendId(productId) }),
+  });
+}
+
+interface CaseMessageResponse {
+  response: string;
+  known_facts: string[];
+}
+
+export function sendCaseMessageApi(caseId: string, message: string) {
+  return request<CaseMessageResponse>(`/api/cases/${backendId(caseId)}/messages`, {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
+}

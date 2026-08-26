@@ -35,6 +35,32 @@ def _case_output(case: models.CustomerCase) -> dict:
     }
 
 
+def _case_detail_output(case: models.CustomerCase) -> dict:
+    output = _case_output(case)
+    review = case.review
+    analysis = None
+    if review:
+        analysis = {
+            "sentiment": review.sentiment,
+            "emotion": review.emotion or "",
+            "severity": review.severity or case.severity,
+            "category": review.category or "General",
+            "rootCause": review.root_cause or "Requires further diagnosis",
+            "customerProblem": review.review_text,
+            "safetyConcern": review.safety_concern,
+            "confidence": review.confidence or 0,
+            "missingInformation": review.missing_information or [],
+        }
+    return {
+        **output,
+        "messages": case.messages,
+        "analysis": analysis,
+        "original_review_text": review.review_text if review else "",
+        "original_rating": review.rating if review else 0,
+        "engineering_issue": case.issue,
+    }
+
+
 @router.get("", response_model=list[schemas.CaseOut])
 def list_cases(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     query = _scope_query(db.query(models.CustomerCase), current_user)
@@ -48,10 +74,7 @@ def get_case(case_id: str, db: Session = Depends(get_db), current_user: models.U
         raise HTTPException(status_code=404, detail="Case not found")
     if current_user.role == models.Role.CUSTOMER and case.customer_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to view this case")
-    return {
-        **_case_output(case),
-        "messages": case.messages,
-    }
+    return _case_detail_output(case)
 
 
 @router.post("/{case_id}/messages", response_model=schemas.CaseMessageResponse)

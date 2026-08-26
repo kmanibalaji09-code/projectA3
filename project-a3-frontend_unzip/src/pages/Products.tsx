@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Plus, Star, Pencil, Eye, EyeOff } from "lucide-react";
+import { Plus, Star, Pencil, Eye, EyeOff, Trash2 } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { ProductThumb } from "../components/ProductThumb";
 import { Badge } from "../components/Badge";
 import { products as initialProducts } from "../data/mockData";
 import type { Product } from "../types";
-import { createProductApi, listProductsApi, publishProductApi, updateProductApi } from "../services/apiClient";
+import { createProductApi, deleteProductApi, listProductsApi, publishProductApi, updateProductApi } from "../services/apiClient";
 
 export function Products() {
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -13,6 +13,7 @@ export function Products() {
   const [newTitle, setNewTitle] = useState("");
   const [newPrice, setNewPrice] = useState("0");
   const [newImage, setNewImage] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
     listProductsApi()
@@ -72,9 +73,21 @@ export function Products() {
     }
   };
 
+  const deleteSelected = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      await Promise.all(selectedIds.map(deleteProductApi));
+      setProducts((prev) => prev.filter((product) => !selectedIds.includes(product.id)));
+      setSelectedIds([]);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Unable to delete products.");
+    }
+  };
+
   return (
     <Layout title="Products" subtitle="Manage your product catalog">
       <div className="mb-4 flex items-center justify-end">
+        {selectedIds.length > 0 && <button onClick={deleteSelected} className="mr-3 flex items-center gap-2 rounded-lg border border-critical-200 px-4 py-2.5 text-sm font-semibold text-critical-700"><Trash2 size={16} />Delete selected ({selectedIds.length})</button>}
         <button onClick={() => setShowAddForm(true)} className="focus-ring flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-accent-700">
           <Plus size={16} />
           Add New Product
@@ -108,6 +121,7 @@ export function Products() {
               <tr key={p.id} className="border-b border-ink-50 last:border-0 hover:bg-ink-50/60">
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-3">
+                    <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={(event) => setSelectedIds((prev) => event.target.checked ? [...prev, p.id] : prev.filter((id) => id !== p.id))} aria-label={`Select ${p.name}`} />
                     <ProductThumb image={p.image} className="h-10 w-10 rounded-md" />
                     <div>
                       <p className="font-semibold text-ink-900">{p.name}</p>

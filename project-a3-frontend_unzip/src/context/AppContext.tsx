@@ -1,10 +1,11 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import type { User } from "../types";
-import { loginApi } from "../services/apiClient";
+import { loginApi, registerApi } from "../services/apiClient";
 
 interface AppContextValue {
   user: User | null;
   login: (email: string, password: string) => Promise<User>;
+  register: (name: string, email: string, password: string, role: "DEVELOPER" | "CUSTOMER") => Promise<User>;
   logout: () => void;
 }
 
@@ -32,13 +33,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return user;
   };
 
+  const register = async (name: string, email: string, password: string, role: "DEVELOPER" | "CUSTOMER") => {
+    const apiUser = await registerApi(name, email, password, role);
+    const user = { ...apiUser, avatarInitials: name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() };
+    setUser(user);
+    localStorage.setItem("a3_user", JSON.stringify(user));
+    return user;
+  };
+
   const logout = () => {
     localStorage.removeItem("a3_access_token");
     localStorage.removeItem("a3_user");
     setUser(null);
   };
 
-  return <AppContext.Provider value={{ user, login, logout }}>{children}</AppContext.Provider>;
+  return <AppContext.Provider value={{ user, login, register, logout }}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {

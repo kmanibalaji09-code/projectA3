@@ -143,6 +143,10 @@ class CaseOut(BaseModel):
 
 class CaseDetailOut(CaseOut):
     messages: list[CaseMessageOut] = []
+    analysis: SentinelAnalysisOut | None = None
+    original_review_text: str = ""
+    original_rating: int = 0
+    engineering_issue: "IssueOut | None" = None
 
 
 class CaseMessageCreate(BaseModel):

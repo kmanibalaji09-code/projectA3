@@ -36,14 +36,30 @@ export function CaseDetail() {
     severity: backendCase.severity,
     createdAt: backendCase.created_at,
     updatedAt: backendCase.updated_at,
-    originalReviewText: (backendCase.known_facts ?? [])[0] ?? "",
-    originalRating: 0,
-    hasEngineeringIssue: false,
-    analysis: { sentiment: "Negative" as const, emotion: "Needs investigation", severity: backendCase.severity, category: "Product issue", rootCause: "See agent feedback", customerProblem: (backendCase.known_facts ?? [])[0] ?? "", safetyConcern: backendCase.severity === "Critical", confidence: 0, missingInformation: [] },
+    originalReviewText: backendCase.original_review_text,
+    originalRating: backendCase.original_rating,
+    hasEngineeringIssue: Boolean(backendCase.engineering_issue),
+    analysis: backendCase.analysis ?? { sentiment: "Negative" as const, emotion: "Needs investigation", severity: backendCase.severity, category: "Product issue", rootCause: "See agent feedback", customerProblem: backendCase.original_review_text, safetyConcern: backendCase.severity === "Critical", confidence: 0, missingInformation: [] },
     memory: { knownFacts: backendCase.known_facts ?? [], openQuestions: [], currentHypothesis: "The agent is collecting diagnostic information from the customer." },
   } : (id ? getCaseById(id) : undefined);
   const messages = backendCase ? backendCase.messages.map((message) => ({ id: message.id, caseId: backendCase.id, sender: message.sender === "customer" ? "CUSTOMER" as const : "AGENT" as const, text: message.text, createdAt: message.created_at })) : (id ? getMessagesForCase(id) : []);
-  const issue = id ? getIssueForCase(id) : undefined;
+  const issue = backendCase?.engineering_issue ? {
+    id: backendCase.engineering_issue.id,
+    caseId: backendCase.engineering_issue.case_id,
+    title: backendCase.engineering_issue.title,
+    severity: backendCase.engineering_issue.severity,
+    component: "See ticket details",
+    rootCause: "See structured case analysis",
+    customerImpact: backendCase.original_review_text,
+    evidence: [backendCase.original_review_text],
+    reproductionSteps: [],
+    suggestedInvestigation: ["Review the customer conversation and reproduce the reported behavior."],
+    suggestedFix: ["Investigate the affected component and prepare a validated fix."],
+    acceptanceCriteria: ["Issue is reproduced and verified fixed."],
+    markdownTicket: backendCase.engineering_issue.description_markdown,
+    status: backendCase.engineering_issue.status as "Pending Approval",
+    createdAt: backendCase.engineering_issue.created_at,
+  } : (id ? getIssueForCase(id) : undefined);
 
   if (loading) {
     return <Layout title="Loading case..."><p className="text-sm text-ink-500">Loading the case from the backend.</p></Layout>;

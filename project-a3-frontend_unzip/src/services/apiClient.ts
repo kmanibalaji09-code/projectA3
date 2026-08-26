@@ -69,6 +69,10 @@ export function publishProductApi(productId: string, published: boolean) {
   });
 }
 
+export async function deleteProductApi(productId: string) {
+  await request<void>(`/api/products/${backendId(productId)}`, { method: "DELETE" });
+}
+
 export function createReviewApi(productId: string, rating: number, reviewText: string) {
   return request<{ id: string }>("/api/reviews", {
     method: "POST",
@@ -82,6 +86,10 @@ export function listCasesApi() {
 
 export interface BackendCaseDetail extends BackendCase {
   messages: Array<{ id: string; sender: string; text: string; created_at: string }>;
+  analysis: SentinelAnalysisResponse["analysis"] | null;
+  original_review_text: string;
+  original_rating: number;
+  engineering_issue: BackendIssue | null;
 }
 
 export function getCaseApi(caseId: string) {
@@ -149,6 +157,16 @@ interface LoginResponse {
   user: ApiUser;
 }
 
+export function registerApi(name: string, email: string, password: string, role: "DEVELOPER" | "CUSTOMER") {
+  return request<LoginResponse>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ name, email, password, role }),
+  }).then((result) => {
+    localStorage.setItem("a3_access_token", result.access_token);
+    return result.user;
+  });
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem("a3_access_token");
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -164,6 +182,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const body = (await response.json().catch(() => ({}))) as ApiErrorBody;
     throw new Error(body.detail ?? `Request failed (${response.status})`);
   }
+
+  if (response.status === 204) return undefined as T;
 
   return response.json() as Promise<T>;
 }

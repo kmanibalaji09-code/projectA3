@@ -22,7 +22,7 @@ export function Products() {
         description: item.description,
         category: item.category,
         price: item.price,
-        image: "product",
+        image: item.image_url || "product",
         features: [],
         status: item.status,
         createdAt: item.created_at,

@@ -103,6 +103,7 @@ export interface BackendCase {
   created_at: string;
   updated_at: string;
   known_facts: string[] | null;
+  agent_feedback: string | null;
 }
 
 export interface BackendIssue {

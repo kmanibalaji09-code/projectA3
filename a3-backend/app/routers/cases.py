@@ -15,10 +15,30 @@ def _scope_query(query, current_user: models.User):
     return query
 
 
+def _case_output(case: models.CustomerCase) -> dict:
+    latest_agent_message = next(
+        (message.text for message in reversed(case.messages) if message.sender == "agent"),
+        None,
+    )
+    return {
+        "id": case.id,
+        "customer_name": case.customer_name,
+        "product_name": case.product_name,
+        "product_id": case.product_id,
+        "review_id": case.review_id,
+        "severity": case.severity,
+        "status": case.status,
+        "known_facts": case.known_facts,
+        "created_at": case.created_at,
+        "updated_at": case.updated_at,
+        "agent_feedback": latest_agent_message,
+    }
+
+
 @router.get("", response_model=list[schemas.CaseOut])
 def list_cases(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     query = _scope_query(db.query(models.CustomerCase), current_user)
-    return query.order_by(models.CustomerCase.created_at.desc()).all()
+    return [_case_output(case) for case in query.order_by(models.CustomerCase.created_at.desc()).all()]
 
 
 @router.get("/{case_id}", response_model=schemas.CaseDetailOut)
@@ -28,7 +48,10 @@ def get_case(case_id: str, db: Session = Depends(get_db), current_user: models.U
         raise HTTPException(status_code=404, detail="Case not found")
     if current_user.role == models.Role.CUSTOMER and case.customer_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to view this case")
-    return case
+    return {
+        **_case_output(case),
+        "messages": case.messages,
+    }
 
 
 @router.post("/{case_id}/messages", response_model=schemas.CaseMessageResponse)

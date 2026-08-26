@@ -138,6 +138,7 @@ class CaseOut(BaseModel):
     known_facts: list[str] | None
     created_at: datetime
     updated_at: datetime
+    agent_feedback: str | None = None
 
 
 class CaseDetailOut(CaseOut):

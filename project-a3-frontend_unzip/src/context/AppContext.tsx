@@ -11,7 +11,10 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem("a3_user");
+    return saved ? (JSON.parse(saved) as User) : null;
+  });
 
   const login = async (email: string, password: string) => {
     const apiUser = await loginApi(email, password);
@@ -25,11 +28,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .toUpperCase(),
       };
       setUser(user);
+      localStorage.setItem("a3_user", JSON.stringify(user));
       return user;
   };
 
   const logout = () => {
     localStorage.removeItem("a3_access_token");
+    localStorage.removeItem("a3_user");
     setUser(null);
   };
 

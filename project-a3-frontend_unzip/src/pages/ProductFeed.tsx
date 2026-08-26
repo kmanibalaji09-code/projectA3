@@ -14,7 +14,7 @@ export function ProductFeed() {
   useEffect(() => {
     listProductsApi().then((items) => setProducts(items.map((item) => ({
       id: item.id, name: item.title, description: item.description, category: item.category,
-      price: item.price, image: "product", features: [], status: item.status,
+      price: item.price, image: item.image_url || "product", features: [], status: item.status,
       createdAt: item.created_at, rating: item.rating, reviewCount: 0,
     })))).catch(() => undefined);
   }, []);

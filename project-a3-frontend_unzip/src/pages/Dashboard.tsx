@@ -138,6 +138,7 @@ export function Dashboard() {
             <Link to={`/cases/${customerCases[0].id}`} className="text-sm font-semibold text-accent-600 hover:underline">Open case</Link>
           </div>
           <p className="text-sm text-ink-600">{customerCases[0].product_name} for {customerCases[0].customer_name}</p>
+          {customerCases[0].agent_feedback && <p className="mt-3 rounded-lg bg-accent-50 p-3 text-sm leading-relaxed text-ink-700">{customerCases[0].agent_feedback}</p>}
           <ul className="mt-3 space-y-1 text-sm text-ink-700">
             {(customerCases[0].known_facts ?? []).slice(-5).map((fact, index) => <li key={`${fact}-${index}`}>• {fact}</li>)}
           </ul>

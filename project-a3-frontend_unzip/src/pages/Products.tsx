@@ -12,6 +12,7 @@ export function Products() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newPrice, setNewPrice] = useState("0");
+  const [newImage, setNewImage] = useState("");
 
   useEffect(() => {
     listProductsApi()
@@ -45,14 +46,15 @@ export function Products() {
     const price = Number(newPrice);
     if (!title || !Number.isFinite(price)) return;
     try {
-      const result = await createProductApi({ title, description: "", price, category: "General" });
+      const result = await createProductApi({ title, description: "", price, category: "General", image_url: newImage });
       setProducts((prev) => [...prev, {
         id: result.id, name: result.title, description: result.description,
-        category: result.category, price: result.price, image: "product", features: [],
+        category: result.category, price: result.price, image: result.image_url || "product", features: [],
         status: result.status, createdAt: result.created_at, rating: result.rating, reviewCount: 0,
       }]);
       setNewTitle("");
       setNewPrice("0");
+      setNewImage("");
       setShowAddForm(false);
     } catch (error) {
       window.alert(error instanceof Error ? error.message : "Unable to create product.");
@@ -80,9 +82,10 @@ export function Products() {
       </div>
 
       {showAddForm && (
-        <form onSubmit={(event) => { event.preventDefault(); void addProduct(); }} className="card mb-4 grid gap-3 p-4 sm:grid-cols-[1fr_160px_auto_auto] sm:items-end">
+        <form onSubmit={(event) => { event.preventDefault(); void addProduct(); }} className="card mb-4 grid gap-3 p-4 sm:grid-cols-[1fr_160px_1fr_auto_auto] sm:items-end">
           <label className="text-sm font-medium text-ink-700">Name<input value={newTitle} onChange={(event) => setNewTitle(event.target.value)} required className="focus-ring mt-1 w-full rounded-lg border border-ink-200 px-3 py-2" /></label>
           <label className="text-sm font-medium text-ink-700">Price<input value={newPrice} onChange={(event) => setNewPrice(event.target.value)} type="number" min="0" step="0.01" required className="focus-ring mt-1 w-full rounded-lg border border-ink-200 px-3 py-2" /></label>
+          <label className="text-sm font-medium text-ink-700">Image URL<input value={newImage} onChange={(event) => setNewImage(event.target.value)} placeholder="https://..." className="focus-ring mt-1 w-full rounded-lg border border-ink-200 px-3 py-2" /></label>
           <button type="submit" className="focus-ring rounded-lg bg-accent-600 px-4 py-2 text-sm font-semibold text-white">Create</button>
           <button type="button" onClick={() => setShowAddForm(false)} className="focus-ring rounded-lg border border-ink-200 px-4 py-2 text-sm font-semibold text-ink-700">Cancel</button>
         </form>

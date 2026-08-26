@@ -148,7 +148,7 @@ export function ProductDetail() {
                       <button key={s} onClick={() => setRating(s)} aria-label={`${s} stars`}>
                         <Star
                           size={22}
-                          className={s <= rating ? "fill-warning-500 text-warning-500" : "text-ink-300"}
+                          className={s <= rating ? "fill-[#f59e0b] text-[#f59e0b]" : "fill-transparent text-ink-300"}
                         />
                       </button>
                     ))}

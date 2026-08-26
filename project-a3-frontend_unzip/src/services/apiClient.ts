@@ -48,6 +48,7 @@ export function createProductApi(product: {
   description: string;
   price: number;
   category: string;
+  image_url?: string;
 }) {
   return request<BackendProduct>("/api/products", {
     method: "POST",
@@ -77,6 +78,18 @@ export function createReviewApi(productId: string, rating: number, reviewText: s
 
 export function listCasesApi() {
   return request<BackendCase[]>("/api/cases");
+}
+
+export interface BackendCaseDetail extends BackendCase {
+  messages: Array<{ id: string; sender: string; text: string; created_at: string }>;
+}
+
+export function getCaseApi(caseId: string) {
+  return request<BackendCaseDetail>(`/api/cases/${backendId(caseId)}`);
+}
+
+export function updateCaseStatusApi(caseId: string, status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED") {
+  return request<BackendCase>(`/api/cases/${backendId(caseId)}/status?status=${status}`, { method: "PATCH" });
 }
 
 export interface BackendCase {

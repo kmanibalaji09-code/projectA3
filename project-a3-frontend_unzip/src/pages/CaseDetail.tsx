@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Layout } from "../components/Layout";
 import { Badge, severityTone, statusTone, sentimentTone } from "../components/Badge";
@@ -6,6 +6,8 @@ import { getCaseById, getMessagesForCase, getIssueForCase } from "../data/mockDa
 import { CaseConversation } from "../components/CaseConversation";
 import { AgentWorkflowPanel } from "../components/AgentWorkflowPanel";
 import { EngineeringIssuePanel } from "../components/EngineeringIssuePanel";
+import { getCaseApi, updateCaseStatusApi, type BackendCaseDetail } from "../services/apiClient";
+import type { CustomerCase } from "../types";
 
 const tabs = ["Case Overview", "Conversation", "Agent Workflow", "Engineering Issue"] as const;
 type Tab = (typeof tabs)[number];
@@ -14,10 +16,36 @@ export function CaseDetail() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<Tab>("Case Overview");
 
-  const caseData = id ? getCaseById(id) : undefined;
-  const messages = id ? getMessagesForCase(id) : [];
+  const [backendCase, setBackendCase] = useState<BackendCaseDetail | null>(null);
+  const [loading, setLoading] = useState(Boolean(id?.startsWith("CASE-")));
+  useEffect(() => {
+    if (id?.startsWith("CASE-")) {
+      getCaseApi(id).then(setBackendCase).catch(() => undefined).finally(() => setLoading(false));
+    }
+  }, [id]);
+  const caseData = backendCase ? {
+    id: backendCase.id,
+    reviewId: backendCase.review_id ?? "",
+    productId: backendCase.product_id,
+    productName: backendCase.product_name,
+    customerId: "",
+    customerName: backendCase.customer_name,
+    status: (backendCase.status === "OPEN" ? "New" : backendCase.status === "IN_PROGRESS" ? "In Progress" : backendCase.status === "RESOLVED" ? "Resolved" : "Waiting Response") as CustomerCase["status"],
+    severity: backendCase.severity,
+    createdAt: backendCase.created_at,
+    updatedAt: backendCase.updated_at,
+    originalReviewText: (backendCase.known_facts ?? [])[0] ?? "",
+    originalRating: 0,
+    hasEngineeringIssue: false,
+    analysis: { sentiment: "Negative" as const, emotion: "Needs investigation", severity: backendCase.severity, category: "Product issue", rootCause: "See agent feedback", customerProblem: (backendCase.known_facts ?? [])[0] ?? "", safetyConcern: backendCase.severity === "Critical", confidence: 0, missingInformation: [] },
+    memory: { knownFacts: backendCase.known_facts ?? [], openQuestions: [], currentHypothesis: "The agent is collecting diagnostic information from the customer." },
+  } : (id ? getCaseById(id) : undefined);
+  const messages = backendCase ? backendCase.messages.map((message) => ({ id: message.id, caseId: backendCase.id, sender: message.sender === "customer" ? "CUSTOMER" as const : "AGENT" as const, text: message.text, createdAt: message.created_at })) : (id ? getMessagesForCase(id) : []);
   const issue = id ? getIssueForCase(id) : undefined;
 
+  if (loading) {
+    return <Layout title="Loading case..."><p className="text-sm text-ink-500">Loading the case from the backend.</p></Layout>;
+  }
   if (!caseData) {
     return (
       <Layout title="Case not found">
@@ -33,6 +61,10 @@ export function CaseDetail() {
           <h2 className="text-lg font-bold text-ink-900">{caseData.id.replace("case-", "CASE-")}</h2>
           <Badge tone={severityTone(caseData.severity)}>{caseData.severity} Severity</Badge>
           <Badge tone={statusTone(caseData.status)}>{caseData.status}</Badge>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => { if (id) updateCaseStatusApi(id, "IN_PROGRESS").then(() => window.location.reload()); }} className="rounded-lg bg-accent-600 px-3 py-2 text-xs font-semibold text-white">Proceed Case</button>
+          <button onClick={() => { if (id) updateCaseStatusApi(id, "CLOSED").then(() => window.location.reload()); }} className="rounded-lg border border-critical-200 px-3 py-2 text-xs font-semibold text-critical-700">Decline Case</button>
         </div>
         <div className="flex gap-6 text-sm text-ink-500">
           <span>

@@ -11,6 +11,9 @@ const iconMap: Record<string, typeof Headphones> = {
 
 export function ProductThumb({ image, className = "" }: { image: string; className?: string }) {
   const Icon = iconMap[image] ?? Package;
+  if (image.startsWith("http")) {
+    return <img src={image} alt="" className={`rounded-lg object-cover ${className}`} />;
+  }
   return (
     <div
       className={`flex items-center justify-center rounded-lg bg-gradient-to-br from-accent-50 to-ink-100 text-accent-600 ${className}`}

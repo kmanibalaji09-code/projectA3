@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Code2, ShoppingBag } from "lucide-react";
 import { useApp } from "../context/AppContext";
@@ -5,10 +6,19 @@ import { useApp } from "../context/AppContext";
 export function Login() {
   const { login } = useApp();
   const navigate = useNavigate();
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = (role: "DEVELOPER" | "CUSTOMER") => {
-    login(role);
-    navigate(role === "DEVELOPER" ? "/dashboard" : "/feed");
+  const handleLogin = async (role: "DEVELOPER" | "CUSTOMER") => {
+    setLoggingIn(true);
+    setError("");
+    try {
+      await login(role);
+      navigate(role === "DEVELOPER" ? "/dashboard" : "/feed");
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : "Unable to connect to the backend.");
+      setLoggingIn(false);
+    }
   };
 
   return (
@@ -23,9 +33,11 @@ export function Login() {
         </div>
 
         <div className="card p-6">
-          <p className="mb-4 text-sm font-semibold text-ink-700">Sign in with a demo account</p>
+          <p className="mb-4 text-sm font-semibold text-ink-700">Sign in with a backend demo account</p>
+          {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
           <div className="space-y-3">
             <button
+              disabled={loggingIn}
               onClick={() => handleLogin("DEVELOPER")}
               className="focus-ring flex w-full items-center gap-3 rounded-lg border border-ink-200 p-4 text-left transition-colors hover:border-accent-500 hover:bg-accent-50"
             >
@@ -34,11 +46,13 @@ export function Login() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-ink-900">Continue as Developer</p>
-                <p className="text-xs text-ink-500">alex@a3-demo.dev</p>
+                <p className="text-xs text-ink-500">developer@a3.demo</p>
+                <p className="text-xs text-ink-400">Password: password123</p>
               </div>
             </button>
 
             <button
+              disabled={loggingIn}
               onClick={() => handleLogin("CUSTOMER")}
               className="focus-ring flex w-full items-center gap-3 rounded-lg border border-ink-200 p-4 text-left transition-colors hover:border-accent-500 hover:bg-accent-50"
             >
@@ -47,14 +61,15 @@ export function Login() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-ink-900">Continue as Customer</p>
-                <p className="text-xs text-ink-500">john@a3-demo.dev</p>
+                <p className="text-xs text-ink-500">customer@a3.demo</p>
+                <p className="text-xs text-ink-400">Password: password123</p>
               </div>
             </button>
           </div>
         </div>
 
         <p className="mt-4 text-center text-xs text-ink-400">
-          Demo mode — no password required. Mock AI service is active.
+          Backend API: http://127.0.0.1:8000
         </p>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { Layout } from "../components/Layout";
 import { ProductThumb } from "../components/ProductThumb";
 import { getProductById, getReviewsForProduct } from "../data/mockData";
 import { aiService } from "../services/aiService";
+import { createReviewApi, listCasesApi } from "../services/apiClient";
 
 const ratingBreakdown = [
   { stars: 5, pct: 72 },
@@ -39,11 +40,19 @@ export function ProductDetail() {
     setSubmitting(true);
     // Mirrors the real flow: save review, then call the review-processing
     // service. Ratings below 3 create a customer case via the Sentinel agent.
-    await aiService.analyzeReview(text, rating, product.id);
-    setSubmitting(false);
-    setSubmitted(true);
-    if (rating < 3) {
-      setTimeout(() => navigate("/cases/case-1024"), 900);
+    try {
+      await aiService.analyzeReview(text, rating, product.id);
+      const savedReview = await createReviewApi(product.id, rating, text);
+      setSubmitted(true);
+      if (rating < 3) {
+        const cases = await listCasesApi();
+        const createdCase = cases.find((item) => item.review_id === savedReview.id);
+        if (createdCase) navigate(`/cases/${createdCase.id}`);
+      }
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Unable to submit review.");
+    } finally {
+      setSubmitting(false);
     }
   };
 

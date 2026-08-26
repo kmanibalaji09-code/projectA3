@@ -5,24 +5,52 @@ import { ProductThumb } from "../components/ProductThumb";
 import { Badge } from "../components/Badge";
 import { products as initialProducts } from "../data/mockData";
 import type { Product } from "../types";
+import { createProductApi, publishProductApi, updateProductApi } from "../services/apiClient";
 
 export function Products() {
   const [products, setProducts] = useState<Product[]>(initialProducts);
 
-  const toggleStatus = (id: string) => {
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? { ...p, status: p.status === "PUBLISHED" ? "UNPUBLISHED" : "PUBLISHED" }
-          : p
-      )
-    );
+  const toggleStatus = async (product: Product) => {
+    try {
+      const result = await publishProductApi(product.id, product.status !== "PUBLISHED");
+      setProducts((prev) => prev.map((item) => item.id === product.id ? { ...item, status: result.status } : item));
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Unable to update product status.");
+    }
+  };
+
+  const addProduct = async () => {
+    const title = window.prompt("Product name");
+    if (!title?.trim()) return;
+    const price = Number(window.prompt("Price", "0"));
+    if (!Number.isFinite(price)) return;
+    try {
+      const result = await createProductApi({ title, description: "", price, category: "General" });
+      setProducts((prev) => [...prev, {
+        id: result.id, name: result.title, description: result.description,
+        category: result.category, price: result.price, image: "product", features: [],
+        status: result.status, createdAt: result.created_at, rating: result.rating, reviewCount: 0,
+      }]);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Unable to create product.");
+    }
+  };
+
+  const editProduct = async (product: Product) => {
+    const title = window.prompt("Product name", product.name);
+    if (!title?.trim()) return;
+    try {
+      const result = await updateProductApi(product.id, { title });
+      setProducts((prev) => prev.map((item) => item.id === product.id ? { ...item, name: result.title } : item));
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Unable to update product.");
+    }
   };
 
   return (
     <Layout title="Products" subtitle="Manage your product catalog">
       <div className="mb-4 flex items-center justify-end">
-        <button className="focus-ring flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-accent-700">
+        <button onClick={addProduct} className="focus-ring flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-accent-700">
           <Plus size={16} />
           Add New Product
         </button>
@@ -68,13 +96,14 @@ export function Products() {
                 <td className="px-5 py-3">
                   <div className="flex items-center justify-end gap-1">
                     <button
+                      onClick={() => editProduct(p)}
                       className="focus-ring rounded-lg p-2 text-ink-500 hover:bg-ink-100 hover:text-ink-900"
                       aria-label="Edit product"
                     >
                       <Pencil size={15} />
                     </button>
                     <button
-                      onClick={() => toggleStatus(p.id)}
+                      onClick={() => toggleStatus(p)}
                       className="focus-ring rounded-lg p-2 text-ink-500 hover:bg-ink-100 hover:text-ink-900"
                       aria-label="Toggle publish status"
                     >

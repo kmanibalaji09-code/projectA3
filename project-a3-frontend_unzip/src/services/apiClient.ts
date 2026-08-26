@@ -9,6 +9,53 @@ const backendId = (id: string) => {
   return knownIds[id] ?? id;
 };
 
+interface BackendProduct {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  rating: number;
+  image_url: string;
+  status: "PUBLISHED" | "DRAFT" | "UNPUBLISHED";
+  created_at: string;
+}
+
+export function createProductApi(product: {
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+}) {
+  return request<BackendProduct>("/api/products", {
+    method: "POST",
+    body: JSON.stringify(product),
+  });
+}
+
+export function updateProductApi(productId: string, update: { title?: string; price?: number }) {
+  return request<BackendProduct>(`/api/products/${backendId(productId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(update),
+  });
+}
+
+export function publishProductApi(productId: string, published: boolean) {
+  return request<BackendProduct>(`/api/products/${backendId(productId)}/${published ? "publish" : "unpublish"}`, {
+    method: "POST",
+  });
+}
+
+export function createReviewApi(productId: string, rating: number, reviewText: string) {
+  return request<{ id: string }>("/api/reviews", {
+    method: "POST",
+    body: JSON.stringify({ product_id: backendId(productId), rating, review_text: reviewText }),
+  });
+}
+
+export function listCasesApi() {
+  return request<Array<{ id: string; review_id: string | null; created_at: string }>>("/api/cases");
+}
 interface ApiErrorBody {
   detail?: string;
 }

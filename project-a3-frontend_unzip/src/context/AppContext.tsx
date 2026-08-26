@@ -29,7 +29,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const logout = () => setUser(null);
+  const logout = () => {
+    localStorage.removeItem("a3_access_token");
+    setUser(null);
+  };
 
   return <AppContext.Provider value={{ user, login, logout }}>{children}</AppContext.Provider>;
 }

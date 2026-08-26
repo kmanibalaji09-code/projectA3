@@ -1,20 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Code2, ShoppingBag } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { useApp } from "../context/AppContext";
 
 export function Login() {
   const { login } = useApp();
   const navigate = useNavigate();
+  const [email, setEmail] = useState("customer@a3.demo");
+  const [password, setPassword] = useState("password123");
   const [loggingIn, setLoggingIn] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async (role: "DEVELOPER" | "CUSTOMER") => {
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email.trim() || !password) return;
     setLoggingIn(true);
     setError("");
     try {
-      await login(role);
-      navigate(role === "DEVELOPER" ? "/dashboard" : "/feed");
+      const user = await login(email, password);
+      navigate(user.role === "DEVELOPER" ? "/dashboard" : "/feed");
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Unable to connect to the backend.");
       setLoggingIn(false);
@@ -33,38 +37,24 @@ export function Login() {
         </div>
 
         <div className="card p-6">
-          <p className="mb-4 text-sm font-semibold text-ink-700">Sign in with a backend demo account</p>
+          <p className="mb-4 text-sm font-semibold text-ink-700">Sign in to your account</p>
           {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-          <div className="space-y-3">
-            <button
-              disabled={loggingIn}
-              onClick={() => handleLogin("DEVELOPER")}
-              className="focus-ring flex w-full items-center gap-3 rounded-lg border border-ink-200 p-4 text-left transition-colors hover:border-accent-500 hover:bg-accent-50"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-100 text-accent-700">
-                <Code2 size={20} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-ink-900">Continue as Developer</p>
-                <p className="text-xs text-ink-500">developer@a3.demo</p>
-                <p className="text-xs text-ink-400">Password: password123</p>
-              </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <label className="block text-sm font-medium text-ink-700">
+              Email
+              <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required className="focus-ring mt-1 w-full rounded-lg border border-ink-200 px-3 py-2.5" />
+            </label>
+            <label className="block text-sm font-medium text-ink-700">
+              Password
+              <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" required className="focus-ring mt-1 w-full rounded-lg border border-ink-200 px-3 py-2.5" />
+            </label>
+            <button disabled={loggingIn} type="submit" className="focus-ring flex w-full items-center justify-center gap-2 rounded-lg bg-accent-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-60">
+              <LogIn size={16} />
+              {loggingIn ? "Signing in..." : "Sign in"}
             </button>
-
-            <button
-              disabled={loggingIn}
-              onClick={() => handleLogin("CUSTOMER")}
-              className="focus-ring flex w-full items-center gap-3 rounded-lg border border-ink-200 p-4 text-left transition-colors hover:border-accent-500 hover:bg-accent-50"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success-100 text-success-700">
-                <ShoppingBag size={20} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-ink-900">Continue as Customer</p>
-                <p className="text-xs text-ink-500">customer@a3.demo</p>
-                <p className="text-xs text-ink-400">Password: password123</p>
-              </div>
-            </button>
+          </form>
+          <div className="mt-5 border-t border-ink-100 pt-4 text-xs text-ink-500">
+            Demo accounts: `developer@a3.demo` or `customer@a3.demo`, password `password123`.
           </div>
         </div>
 

@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
-import type { Role, User } from "../types";
+import type { User } from "../types";
 import { loginApi } from "../services/apiClient";
 
 interface AppContextValue {
   user: User | null;
-  login: (role: Role) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
 }
 
@@ -13,12 +13,9 @@ const AppContext = createContext<AppContextValue | undefined>(undefined);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = async (role: Role) => {
-    const credentials = role === "DEVELOPER"
-      ? { email: "developer@a3.demo", password: "password123" }
-      : { email: "customer@a3.demo", password: "password123" };
-    const apiUser = await loginApi(credentials.email, credentials.password);
-    setUser({
+  const login = async (email: string, password: string) => {
+    const apiUser = await loginApi(email, password);
+    const user = {
       ...apiUser,
       avatarInitials: apiUser.name
         .split(" ")
@@ -26,7 +23,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .join("")
         .slice(0, 2)
         .toUpperCase(),
-    });
+      };
+      setUser(user);
+      return user;
   };
 
   const logout = () => {

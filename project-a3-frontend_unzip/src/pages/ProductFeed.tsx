@@ -1,14 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Star } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { ProductThumb } from "../components/ProductThumb";
-import { products } from "../data/mockData";
-
-const categories = ["All Categories", ...Array.from(new Set(products.map((p) => p.category)))];
+import { products as initialProducts } from "../data/mockData";
+import type { Product } from "../types";
+import { listProductsApi } from "../services/apiClient";
 
 export function ProductFeed() {
   const [category, setCategory] = useState("All Categories");
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+
+  useEffect(() => {
+    listProductsApi().then((items) => setProducts(items.map((item) => ({
+      id: item.id, name: item.title, description: item.description, category: item.category,
+      price: item.price, image: "product", features: [], status: item.status,
+      createdAt: item.created_at, rating: item.rating, reviewCount: 0,
+    })))).catch(() => undefined);
+  }, []);
+
+  const categories = ["All Categories", ...Array.from(new Set(products.map((p) => p.category)))];
 
   const filtered =
     category === "All Categories" ? products : products.filter((p) => p.category === category);

@@ -1,9 +1,13 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Layout } from "../components/Layout";
 import { Badge, severityTone, statusTone } from "../components/Badge";
-import { customerCases } from "../data/mockData";
+import { listCasesApi, type BackendCase } from "../services/apiClient";
 
 export function CustomerCases() {
+  const [customerCases, setCustomerCases] = useState<BackendCase[]>([]);
+  useEffect(() => { listCasesApi().then(setCustomerCases).catch(() => undefined); }, []);
+
   return (
     <Layout title="Customer Cases" subtitle="Cases opened automatically from negative reviews">
       <div className="card overflow-hidden">
@@ -23,19 +27,19 @@ export function CustomerCases() {
               <tr key={c.id} className="border-b border-ink-50 last:border-0 hover:bg-ink-50/60">
                 <td className="px-5 py-3">
                   <Link to={`/cases/${c.id}`} className="font-semibold text-accent-600 hover:underline">
-                    {c.id.replace("case-", "CASE-")}
+                    {c.id}
                   </Link>
                 </td>
-                <td className="px-5 py-3 text-ink-700">{c.customerName}</td>
-                <td className="px-5 py-3 text-ink-700">{c.productName}</td>
+                <td className="px-5 py-3 text-ink-700">{c.customer_name}</td>
+                <td className="px-5 py-3 text-ink-700">{c.product_name}</td>
                 <td className="px-5 py-3">
                   <Badge tone={severityTone(c.severity)}>{c.severity}</Badge>
                 </td>
                 <td className="px-5 py-3">
-                  <Badge tone={statusTone(c.status)}>{c.status}</Badge>
+                  <Badge tone={statusTone(c.status)}>{c.status.replaceAll("_", " ")}</Badge>
                 </td>
                 <td className="px-5 py-3 text-ink-500">
-                  {new Date(c.updatedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                  {new Date(c.updated_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                 </td>
               </tr>
             ))}

@@ -9,7 +9,7 @@ const backendId = (id: string) => {
   return knownIds[id] ?? id;
 };
 
-interface BackendProduct {
+export interface BackendProduct {
   id: string;
   title: string;
   description: string;
@@ -19,6 +19,28 @@ interface BackendProduct {
   image_url: string;
   status: "PUBLISHED" | "DRAFT" | "UNPUBLISHED";
   created_at: string;
+}
+
+export function listProductsApi() {
+  return request<BackendProduct[]>("/api/products");
+}
+
+export function getProductApi(productId: string) {
+  return request<BackendProduct>(`/api/products/${backendId(productId)}`);
+}
+
+export interface BackendReview {
+  id: string;
+  product_id: string;
+  user_id: string;
+  rating: number;
+  review_text: string;
+  created_at: string;
+}
+
+export function listReviewsApi(productId?: string) {
+  const query = productId ? `?product_id=${encodeURIComponent(backendId(productId))}` : "";
+  return request<BackendReview[]>(`/api/reviews${query}`);
 }
 
 export function createProductApi(product: {
@@ -54,7 +76,33 @@ export function createReviewApi(productId: string, rating: number, reviewText: s
 }
 
 export function listCasesApi() {
-  return request<Array<{ id: string; review_id: string | null; created_at: string }>>("/api/cases");
+  return request<BackendCase[]>("/api/cases");
+}
+
+export interface BackendCase {
+  id: string;
+  customer_name: string;
+  product_name: string;
+  product_id: string;
+  review_id: string | null;
+  severity: "Low" | "Medium" | "High" | "Critical";
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BackendIssue {
+  id: string;
+  case_id: string;
+  title: string;
+  description_markdown: string;
+  severity: "Low" | "Medium" | "High" | "Critical";
+  status: string;
+  created_at: string;
+}
+
+export function listIssuesApi() {
+  return request<BackendIssue[]>("/api/issues");
 }
 interface ApiErrorBody {
   detail?: string;

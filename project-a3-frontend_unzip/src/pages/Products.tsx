@@ -1,14 +1,35 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Star, Pencil, Eye, EyeOff } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { ProductThumb } from "../components/ProductThumb";
 import { Badge } from "../components/Badge";
 import { products as initialProducts } from "../data/mockData";
 import type { Product } from "../types";
-import { createProductApi, publishProductApi, updateProductApi } from "../services/apiClient";
+import { createProductApi, listProductsApi, publishProductApi, updateProductApi } from "../services/apiClient";
 
 export function Products() {
   const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newPrice, setNewPrice] = useState("0");
+
+  useEffect(() => {
+    listProductsApi()
+      .then((items) => setProducts(items.map((item) => ({
+        id: item.id,
+        name: item.title,
+        description: item.description,
+        category: item.category,
+        price: item.price,
+        image: "product",
+        features: [],
+        status: item.status,
+        createdAt: item.created_at,
+        rating: item.rating,
+        reviewCount: 0,
+      }))))
+      .catch(() => undefined);
+  }, []);
 
   const toggleStatus = async (product: Product) => {
     try {
@@ -20,10 +41,9 @@ export function Products() {
   };
 
   const addProduct = async () => {
-    const title = window.prompt("Product name");
-    if (!title?.trim()) return;
-    const price = Number(window.prompt("Price", "0"));
-    if (!Number.isFinite(price)) return;
+    const title = newTitle.trim();
+    const price = Number(newPrice);
+    if (!title || !Number.isFinite(price)) return;
     try {
       const result = await createProductApi({ title, description: "", price, category: "General" });
       setProducts((prev) => [...prev, {
@@ -31,6 +51,9 @@ export function Products() {
         category: result.category, price: result.price, image: "product", features: [],
         status: result.status, createdAt: result.created_at, rating: result.rating, reviewCount: 0,
       }]);
+      setNewTitle("");
+      setNewPrice("0");
+      setShowAddForm(false);
     } catch (error) {
       window.alert(error instanceof Error ? error.message : "Unable to create product.");
     }
@@ -50,11 +73,20 @@ export function Products() {
   return (
     <Layout title="Products" subtitle="Manage your product catalog">
       <div className="mb-4 flex items-center justify-end">
-        <button onClick={addProduct} className="focus-ring flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-accent-700">
+        <button onClick={() => setShowAddForm(true)} className="focus-ring flex items-center gap-2 rounded-lg bg-accent-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-accent-700">
           <Plus size={16} />
           Add New Product
         </button>
       </div>
+
+      {showAddForm && (
+        <form onSubmit={(event) => { event.preventDefault(); void addProduct(); }} className="card mb-4 grid gap-3 p-4 sm:grid-cols-[1fr_160px_auto_auto] sm:items-end">
+          <label className="text-sm font-medium text-ink-700">Name<input value={newTitle} onChange={(event) => setNewTitle(event.target.value)} required className="focus-ring mt-1 w-full rounded-lg border border-ink-200 px-3 py-2" /></label>
+          <label className="text-sm font-medium text-ink-700">Price<input value={newPrice} onChange={(event) => setNewPrice(event.target.value)} type="number" min="0" step="0.01" required className="focus-ring mt-1 w-full rounded-lg border border-ink-200 px-3 py-2" /></label>
+          <button type="submit" className="focus-ring rounded-lg bg-accent-600 px-4 py-2 text-sm font-semibold text-white">Create</button>
+          <button type="button" onClick={() => setShowAddForm(false)} className="focus-ring rounded-lg border border-ink-200 px-4 py-2 text-sm font-semibold text-ink-700">Cancel</button>
+        </form>
+      )}
 
       <div className="card overflow-hidden">
         <table className="w-full text-left text-sm">

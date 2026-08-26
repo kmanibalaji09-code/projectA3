@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Star, X } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { ProductThumb } from "../components/ProductThumb";
 import { getProductById, getReviewsForProduct } from "../data/mockData";
 import { aiService } from "../services/aiService";
-import { createReviewApi, listCasesApi } from "../services/apiClient";
+import { createReviewApi, getProductApi, listCasesApi, type BackendProduct } from "../services/apiClient";
 
 const ratingBreakdown = [
   { stars: 5, pct: 72 },
@@ -18,7 +18,25 @@ const ratingBreakdown = [
 export function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const product = id ? getProductById(id) : undefined;
+  const [backendProduct, setBackendProduct] = useState<BackendProduct | null>(null);
+  useEffect(() => {
+    if (id?.startsWith("PROD-")) getProductApi(id).then(setBackendProduct).catch(() => undefined);
+  }, [id]);
+  const product = backendProduct
+    ? {
+        id: backendProduct.id,
+        name: backendProduct.title,
+        description: backendProduct.description,
+        category: backendProduct.category,
+        price: backendProduct.price,
+        image: "product",
+        features: [],
+        status: backendProduct.status,
+        createdAt: backendProduct.created_at,
+        rating: backendProduct.rating,
+        reviewCount: 0,
+      }
+    : (id ? getProductById(id) : undefined);
   const reviews = id ? getReviewsForProduct(id) : [];
 
   const [showForm, setShowForm] = useState(false);

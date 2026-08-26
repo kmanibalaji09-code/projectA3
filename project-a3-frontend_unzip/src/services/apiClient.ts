@@ -89,6 +89,7 @@ export interface BackendCase {
   status: string;
   created_at: string;
   updated_at: string;
+  known_facts: string[] | null;
 }
 
 export interface BackendIssue {
@@ -103,6 +104,20 @@ export interface BackendIssue {
 
 export function listIssuesApi() {
   return request<BackendIssue[]>("/api/issues");
+}
+
+export function approveIssueApi(issueId: string, decision: "approve" | "reject") {
+  return request<{ issue: BackendIssue }>("/api/workflow/approve", {
+    method: "POST",
+    body: JSON.stringify({ issue_id: issueId, decision, notes: "Developer decision from dashboard" }),
+  });
+}
+
+export function updateIssueApi(issueId: string, update: { title: string }) {
+  return request<BackendIssue>(`/api/issues/${issueId}`, {
+    method: "PATCH",
+    body: JSON.stringify(update),
+  });
 }
 interface ApiErrorBody {
   detail?: string;

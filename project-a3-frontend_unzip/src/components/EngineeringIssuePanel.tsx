@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge, severityTone, statusTone } from "./Badge";
 import type { EngineeringIssue } from "../types";
+import { approveIssueApi } from "../services/apiClient";
 
 export function EngineeringIssuePanel({ issue, caseId }: { issue?: EngineeringIssue; caseId: string }) {
   const [status, setStatus] = useState(issue?.status ?? "Pending Approval");
@@ -50,7 +51,14 @@ export function EngineeringIssuePanel({ issue, caseId }: { issue?: EngineeringIs
 
       <div className="mt-6 flex gap-2 border-t border-ink-100 pt-5">
         <button
-          onClick={() => setStatus("Approved")}
+          onClick={async () => {
+            try {
+              await approveIssueApi(issue.id, "approve");
+              setStatus("Approved");
+            } catch (error) {
+              window.alert(error instanceof Error ? error.message : "Unable to approve issue.");
+            }
+          }}
           className="focus-ring rounded-lg bg-success-600 px-4 py-2 text-sm font-semibold text-white hover:bg-success-700"
         >
           Approve Issue
@@ -62,7 +70,14 @@ export function EngineeringIssuePanel({ issue, caseId }: { issue?: EngineeringIs
           Edit Issue
         </button>
         <button
-          onClick={() => setStatus("Rejected")}
+          onClick={async () => {
+            try {
+              await approveIssueApi(issue.id, "reject");
+              setStatus("Rejected");
+            } catch (error) {
+              window.alert(error instanceof Error ? error.message : "Unable to reject issue.");
+            }
+          }}
           className="focus-ring rounded-lg border border-critical-200 px-4 py-2 text-sm font-semibold text-critical-700 hover:bg-critical-100"
         >
           Reject Issue

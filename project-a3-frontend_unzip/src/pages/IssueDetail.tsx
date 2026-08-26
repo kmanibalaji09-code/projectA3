@@ -3,11 +3,14 @@ import { useParams, Link } from "react-router-dom";
 import { Layout } from "../components/Layout";
 import { Badge, severityTone, statusTone } from "../components/Badge";
 import { getIssueById } from "../data/mockData";
+import { approveIssueApi, updateIssueApi } from "../services/apiClient";
 
 export function IssueDetail() {
   const { id } = useParams<{ id: string }>();
   const issue = id ? getIssueById(id) : undefined;
   const [status, setStatus] = useState(issue?.status);
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(issue?.title ?? "");
 
   if (!issue) {
     return (
@@ -34,7 +37,13 @@ export function IssueDetail() {
             <Badge tone={severityTone(issue.severity)}>{issue.severity} Priority</Badge>
             <Badge tone={statusTone(status ?? issue.status)}>{status}</Badge>
           </div>
-          <h2 className="mb-6 text-xl font-bold text-ink-900">{issue.title}</h2>
+          {editing ? (
+            <div className="mb-6 flex gap-2">
+              <input value={title} onChange={(event) => setTitle(event.target.value)} className="focus-ring min-w-0 flex-1 rounded-lg border border-ink-200 px-3 py-2 text-lg font-bold" />
+              <button onClick={async () => { const updated = await updateIssueApi(issue.id, { title }); setTitle(updated.title); setEditing(false); setStatus("Edited"); }} className="rounded-lg bg-accent-600 px-3 py-2 text-sm font-semibold text-white">Save</button>
+              <button onClick={() => setEditing(false)} className="rounded-lg border border-ink-200 px-3 py-2 text-sm font-semibold text-ink-700">Cancel</button>
+            </div>
+          ) : <h2 className="mb-6 text-xl font-bold text-ink-900">{title}</h2>}
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <Field label="Component" value={issue.component} />
@@ -65,19 +74,33 @@ export function IssueDetail() {
 
           <div className="mt-8 flex gap-2 border-t border-ink-100 pt-6">
             <button
-              onClick={() => setStatus("Approved")}
+              onClick={async () => {
+                try {
+                  await approveIssueApi(issue.id, "approve");
+                  setStatus("Approved");
+                } catch (error) {
+                  window.alert(error instanceof Error ? error.message : "Unable to approve issue.");
+                }
+              }}
               className="focus-ring rounded-lg bg-success-600 px-4 py-2 text-sm font-semibold text-white hover:bg-success-700"
             >
               Approve Issue
             </button>
             <button
-              onClick={() => setStatus("Edited")}
+              onClick={() => setEditing(true)}
               className="focus-ring rounded-lg border border-ink-200 px-4 py-2 text-sm font-semibold text-ink-700 hover:bg-ink-50"
             >
               Edit Issue
             </button>
             <button
-              onClick={() => setStatus("Rejected")}
+              onClick={async () => {
+                try {
+                  await approveIssueApi(issue.id, "reject");
+                  setStatus("Rejected");
+                } catch (error) {
+                  window.alert(error instanceof Error ? error.message : "Unable to reject issue.");
+                }
+              }}
               className="focus-ring rounded-lg border border-critical-200 px-4 py-2 text-sm font-semibold text-critical-700 hover:bg-critical-100"
             >
               Reject Issue

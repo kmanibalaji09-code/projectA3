@@ -1,10 +1,11 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Package, MessageSquare, AlertTriangle, FolderOpen, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { Layout } from "../components/Layout";
 import { StatCard } from "../components/StatCard";
 import { Badge, severityTone, statusTone } from "../components/Badge";
-import { customerCases, products, reviews } from "../data/mockData";
+import { listCasesApi, listProductsApi, type BackendCase } from "../services/apiClient";
 
 const donutData = [
   { name: "Positive (4-5★)", value: 773, color: "var(--color-success-600)" },
@@ -29,11 +30,18 @@ const stateDot: Record<string, string> = {
 
 export function Dashboard() {
   const totalReviews = 1248;
+  const [customerCases, setCustomerCases] = useState<BackendCase[]>([]);
+  const [productCount, setProductCount] = useState(0);
+
+  useEffect(() => {
+    listCasesApi().then(setCustomerCases).catch(() => undefined);
+    listProductsApi().then((items) => setProductCount(items.length)).catch(() => undefined);
+  }, []);
 
   return (
     <Layout title="Developer Dashboard" subtitle="Welcome back, Alex 👋">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Total Products" value={String(products.length)} delta="+2 this week" icon={Package} tone="accent" />
+        <StatCard label="Total Products" value={String(productCount)} delta="Live from backend" icon={Package} tone="accent" />
         <StatCard label="Total Reviews" value="1,248" delta="+18% this week" icon={MessageSquare} tone="accent" />
         <StatCard label="Negative Reviews" value="312" delta="+8% this week" icon={AlertTriangle} tone="critical" />
         <StatCard label="Open Cases" value="87" delta="+5% this week" icon={FolderOpen} tone="warning" />
@@ -62,20 +70,20 @@ export function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {customerCases.map((c) => (
+                  {customerCases.slice(0, 5).map((c) => (
                   <tr key={c.id} className="border-b border-ink-50 last:border-0 hover:bg-ink-50/60">
                     <td className="py-3 pr-2">
                       <Link to={`/cases/${c.id}`} className="font-semibold text-accent-600 hover:underline">
-                        {c.id.replace("case-", "CASE-")}
+                        {c.id}
                       </Link>
                     </td>
-                    <td className="py-3 pr-2 text-ink-700">{c.customerName}</td>
-                    <td className="py-3 pr-2 text-ink-700">{c.productName}</td>
+                    <td className="py-3 pr-2 text-ink-700">{c.customer_name}</td>
+                    <td className="py-3 pr-2 text-ink-700">{c.product_name}</td>
                     <td className="py-3 pr-2">
                       <Badge tone={severityTone(c.severity)}>{c.severity}</Badge>
                     </td>
                     <td className="py-3 pr-2">
-                      <Badge tone={statusTone(c.status)}>{c.status}</Badge>
+                      <Badge tone={statusTone(c.status)}>{c.status.replaceAll("_", " ")}</Badge>
                     </td>
                   </tr>
                 ))}
@@ -122,6 +130,19 @@ export function Dashboard() {
           </ul>
         </div>
       </div>
+
+      {customerCases[0] && (
+        <div className="mt-6 card p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-bold text-ink-900">Latest Agent Feedback</h2>
+            <Link to={`/cases/${customerCases[0].id}`} className="text-sm font-semibold text-accent-600 hover:underline">Open case</Link>
+          </div>
+          <p className="text-sm text-ink-600">{customerCases[0].product_name} for {customerCases[0].customer_name}</p>
+          <ul className="mt-3 space-y-1 text-sm text-ink-700">
+            {(customerCases[0].known_facts ?? []).slice(-5).map((fact, index) => <li key={`${fact}-${index}`}>• {fact}</li>)}
+          </ul>
+        </div>
+      )}
 
       <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
         {/* Agent Workflow Overview */}
@@ -178,7 +199,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-ink-400">{reviews.length} sample reviews loaded in this demo dataset.</p>
+      <p className="mt-4 text-xs text-ink-400">Live case feedback is loaded from the backend.</p>
     </Layout>
   );
 }

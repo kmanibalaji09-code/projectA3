@@ -111,10 +111,32 @@ def generate_customer_response(message: str, known_facts: list[str]) -> dict:
             return result
 
     updated_facts = [*known_facts, message]
+    customer_messages = max(0, len(updated_facts) - 1)
+    is_battery_issue = bool(re.search(r"battery|charg|warm|hot|overheat", " ".join(updated_facts), re.IGNORECASE))
+
+    questions = [
+        "When did you first notice the problem, and how long had you owned the product?",
+        "What charger, cable, outlet, or environment are you using when the problem happens?",
+        "How long does a full charge take, and what battery percentage do you see when you unplug it?",
+        "Is there any physical damage, unusual smell, swelling, or recent firmware/software change?",
+    ]
+    if customer_messages <= len(questions):
+        response = (
+            "Thanks, I recorded that detail. "
+            + questions[customer_messages - 1]
+        )
+    elif is_battery_issue:
+        response = (
+            "Thanks, I have enough detail to narrow this down. The pattern points to a possible "
+            "battery degradation or charging-controller fault, with a potential thermal safety concern. "
+            "Please stop using or charging the product if it becomes unusually hot, and the developer can now investigate the charger, battery health, and affected production batch."
+        )
+    else:
+        response = (
+            "Thanks, I have enough detail to prepare a useful finding. The issue appears reproducible "
+            "under the conditions you described; the developer should compare those conditions with the product's expected behavior and investigate the affected component."
+        )
     return {
-        "response": (
-            "Thanks for the extra detail — that helps narrow this down. "
-            "Could you also let me know what percentage the battery is at when you unplug it?"
-        ),
+        "response": response,
         "known_facts": updated_facts,
     }

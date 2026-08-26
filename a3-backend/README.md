@@ -68,6 +68,18 @@ The included `vercel.json` uses `api/index.py` as the FastAPI serverless entry p
 verify the backend at `/`, `/api/health`, and `/docs`. Set the frontend's `VITE_API_URL` to this
 backend deployment URL, without a trailing `/api`.
 
+Set these backend Vercel environment variables before redeploying:
+
+```text
+SECRET_KEY=<long-random-production-secret>
+DATABASE_URL=<hosted-postgresql-connection-string>
+CORS_ORIGINS=https://<your-frontend>.vercel.app
+AI_PROVIDER=mock
+```
+
+The default local SQLite database is suitable only for local development. Vercel function storage
+is temporary, so SQLite data should not be used for deployed users, products, reviews, or cases.
+
 Vercel's local filesystem is not a durable database. For real production data, use a hosted
 PostgreSQL database and set `DATABASE_URL` in the backend Vercel project.
 

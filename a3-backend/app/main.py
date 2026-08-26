@@ -35,3 +35,8 @@ app.include_router(workflow.router)
 @app.get("/api/health")
 def health_check():
     return {"status": "ok"}
+
+
+@app.get("/")
+def api_root():
+    return {"name": "PROJECT A3 API", "status": "ok", "docs": "/docs"}

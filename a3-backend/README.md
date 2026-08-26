@@ -61,6 +61,16 @@ uvicorn app.main:app --reload --port 8000
 
 The API is now live at `http://127.0.0.1:8000`. Interactive docs: `http://127.0.0.1:8000/docs`.
 
+### Deploying the backend to Vercel
+
+Create a separate Vercel project for this backend and set its **Root Directory** to `a3-backend`.
+The included `vercel.json` uses `api/index.py` as the FastAPI serverless entry point. After deploy,
+verify the backend at `/`, `/api/health`, and `/docs`. Set the frontend's `VITE_API_URL` to this
+backend deployment URL, without a trailing `/api`.
+
+Vercel's local filesystem is not a durable database. For real production data, use a hosted
+PostgreSQL database and set `DATABASE_URL` in the backend Vercel project.
+
 ### Demo accounts (created by `python -m app.seed`)
 
 | Role      | Email                 | Password    |

@@ -1,13 +1,33 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Layout } from "../components/Layout";
 import { Badge, severityTone, statusTone } from "../components/Badge";
 import { getIssueById } from "../data/mockData";
-import { approveIssueApi, updateIssueApi } from "../services/apiClient";
+import { approveIssueApi, getIssueApi, updateIssueApi } from "../services/apiClient";
 
 export function IssueDetail() {
   const { id } = useParams<{ id: string }>();
-  const issue = id ? getIssueById(id) : undefined;
+  const [backendIssue, setBackendIssue] = useState<Awaited<ReturnType<typeof getIssueApi>> | null>(null);
+  useEffect(() => {
+    if (id?.startsWith("ISSUE-")) getIssueApi(id).then(setBackendIssue).catch(() => undefined);
+  }, [id]);
+  const issue = backendIssue ? {
+    id: backendIssue.id,
+    caseId: backendIssue.case_id,
+    title: backendIssue.title,
+    severity: backendIssue.severity,
+    component: "See investigation plan",
+    rootCause: backendIssue.description_markdown.split("## Investigation")[0].replace("## Probable root cause", "").trim(),
+    customerImpact: backendIssue.description_markdown.split("## Summary")[1]?.split("## Probable root cause")[0]?.trim() ?? "",
+    evidence: [backendIssue.description_markdown.split("## Evidence")[1]?.split("## Investigation")[0]?.trim() ?? "Customer report"],
+    reproductionSteps: ["Use the customer conditions recorded in the case conversation."],
+    suggestedInvestigation: [backendIssue.description_markdown.split("## Investigation")[1]?.split("## Proposed solution")[0]?.trim() ?? "Reproduce the issue and compare with the product specification."],
+    suggestedFix: [backendIssue.description_markdown.split("## Proposed solution")[1]?.trim() ?? "Identify the failing component and ship a verified fix."],
+    acceptanceCriteria: ["The issue is reproduced, fixed, and covered by a regression test."],
+    markdownTicket: backendIssue.description_markdown,
+    status: backendIssue.status === "APPROVED" ? "Approved" as const : backendIssue.status === "REJECTED" ? "Rejected" as const : "Pending Approval" as const,
+    createdAt: backendIssue.created_at,
+  } : (id ? getIssueById(id) : undefined);
   const [status, setStatus] = useState(issue?.status);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(issue?.title ?? "");

@@ -128,6 +128,10 @@ export function listIssuesApi() {
   return request<BackendIssue[]>("/api/issues");
 }
 
+export function getIssueApi(issueId: string) {
+  return request<BackendIssue>(`/api/issues/${issueId}`);
+}
+
 export function approveIssueApi(issueId: string, decision: "approve" | "reject") {
   return request<{ issue: BackendIssue }>("/api/workflow/approve", {
     method: "POST",

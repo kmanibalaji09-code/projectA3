@@ -112,18 +112,32 @@ def generate_customer_response(message: str, known_facts: list[str]) -> dict:
 
     updated_facts = [*known_facts, message]
     customer_messages = max(0, len(updated_facts) - 1)
-    is_battery_issue = bool(re.search(r"battery|charg|warm|hot|overheat", " ".join(updated_facts), re.IGNORECASE))
+    all_facts = " ".join(updated_facts)
+    is_battery_issue = bool(re.search(r"battery|charg|warm|hot|overheat", all_facts, re.IGNORECASE))
+    is_connectivity_issue = bool(re.search(r"connect|disconnect|bluetooth|pair|wifi|signal", all_facts, re.IGNORECASE))
 
-    questions = [
-        "When did you first notice the problem, and how long had you owned the product?",
-        "What charger, cable, outlet, or environment are you using when the problem happens?",
-        "How long does a full charge take, and what battery percentage do you see when you unplug it?",
-        "Is there any physical damage, unusual smell, swelling, or recent firmware/software change?",
-    ]
+    questions = (
+        [
+            "When did the connection problem begin, and does it happen every time or only in certain places?",
+            "Which device are you connecting to, and does the problem affect other phones, laptops, or apps?",
+            "Have you tried forgetting and pairing the product again, and are both devices updated?",
+            "Does it disconnect during calls, music, or movement, and how far away are you from the device?",
+        ] if is_connectivity_issue else [
+            "When did you first notice the problem, and how long had you owned the product?",
+            "What charger, cable, outlet, or environment are you using when the problem happens?",
+            "How long does a full charge take, and what battery percentage do you see when you unplug it?",
+            "Is there any physical damage, unusual smell, swelling, or recent firmware/software change?",
+        ]
+    )
     if customer_messages <= len(questions):
         response = (
             "Thanks, I recorded that detail. "
             + questions[customer_messages - 1]
+        )
+    elif is_connectivity_issue:
+        response = (
+            "Thanks, I have enough detail to narrow this down. The pattern points to a possible Bluetooth pairing, firmware, or signal stability problem. "
+            "The developer can investigate connection logs, firmware compatibility, and pairing behavior across devices."
         )
     elif is_battery_issue:
         response = (

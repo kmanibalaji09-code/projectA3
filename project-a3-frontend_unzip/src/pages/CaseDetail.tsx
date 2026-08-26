@@ -8,12 +8,14 @@ import { AgentWorkflowPanel } from "../components/AgentWorkflowPanel";
 import { EngineeringIssuePanel } from "../components/EngineeringIssuePanel";
 import { getCaseApi, updateCaseStatusApi, type BackendCaseDetail } from "../services/apiClient";
 import type { CustomerCase } from "../types";
+import { useApp } from "../context/AppContext";
 
 const tabs = ["Case Overview", "Conversation", "Agent Workflow", "Engineering Issue"] as const;
 type Tab = (typeof tabs)[number];
 
 export function CaseDetail() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useApp();
   const [activeTab, setActiveTab] = useState<Tab>("Case Overview");
 
   const [backendCase, setBackendCase] = useState<BackendCaseDetail | null>(null);
@@ -62,10 +64,10 @@ export function CaseDetail() {
           <Badge tone={severityTone(caseData.severity)}>{caseData.severity} Severity</Badge>
           <Badge tone={statusTone(caseData.status)}>{caseData.status}</Badge>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => { if (id) updateCaseStatusApi(id, "IN_PROGRESS").then(() => window.location.reload()); }} className="rounded-lg bg-accent-600 px-3 py-2 text-xs font-semibold text-white">Proceed Case</button>
-          <button onClick={() => { if (id) updateCaseStatusApi(id, "CLOSED").then(() => window.location.reload()); }} className="rounded-lg border border-critical-200 px-3 py-2 text-xs font-semibold text-critical-700">Decline Case</button>
-        </div>
+        {user?.role === "DEVELOPER" && <div className="flex gap-2">
+          <button onClick={async () => { if (!id) return; try { await updateCaseStatusApi(id, "IN_PROGRESS"); window.location.reload(); } catch (error) { window.alert(error instanceof Error ? error.message : "Unable to proceed with case."); } }} className="rounded-lg bg-accent-600 px-3 py-2 text-xs font-semibold text-white">Proceed Case</button>
+          <button onClick={async () => { if (!id) return; try { await updateCaseStatusApi(id, "CLOSED"); window.location.reload(); } catch (error) { window.alert(error instanceof Error ? error.message : "Unable to decline case."); } }} className="rounded-lg border border-critical-200 px-3 py-2 text-xs font-semibold text-critical-700">Decline Case</button>
+        </div>}
         <div className="flex gap-6 text-sm text-ink-500">
           <span>
             Customer <span className="font-semibold text-ink-900">{caseData.customerName}</span>

@@ -27,20 +27,27 @@ export function CaseConversation({
     setMessages((prev) => [...prev, customerMsg]);
     setInput("");
     setSending(true);
-
-    const { response, updatedMemory } = await aiService.generateCustomerResponse(input, memory, caseData.id);
-    setMemory(updatedMemory);
-    setMessages((prev) => [
-      ...prev,
-      {
+    try {
+      const { response, updatedMemory } = await aiService.generateCustomerResponse(input, memory, caseData.id);
+      setMemory(updatedMemory);
+      setMessages((prev) => [...prev, {
         id: `msg-${Date.now() + 1}`,
         caseId: caseData.id,
         sender: "AGENT",
         text: response,
         createdAt: new Date().toISOString(),
-      },
-    ]);
-    setSending(false);
+      }]);
+    } catch (error) {
+      setMessages((prev) => [...prev, {
+        id: `msg-error-${Date.now()}`,
+        caseId: caseData.id,
+        sender: "AGENT",
+        text: error instanceof Error ? `Unable to contact the support agent: ${error.message}` : "Unable to contact the support agent.",
+        createdAt: new Date().toISOString(),
+      }]);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (

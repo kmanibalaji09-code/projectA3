@@ -56,6 +56,27 @@ The frontend uses `http://127.0.0.1:8000` by default. To use another backend URL
 Open the printed local URL, then choose **Continue as Developer** or **Continue as Customer** on the
 login screen (no password needed in this demo).
 
+## Deploying the frontend to Vercel
+
+This repository contains the frontend inside `project-a3-frontend_unzip`, so set Vercel's
+**Root Directory** to `project-a3-frontend_unzip`. Use these project settings:
+
+- Framework Preset: `Vite`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Install Command: `npm install`
+
+Add this environment variable in Vercel:
+
+```text
+VITE_API_URL=https://your-backend-domain.example.com
+```
+
+Do not use `http://127.0.0.1:8000` for a deployed frontend. That address points to the visitor's
+own computer. The FastAPI backend must be deployed separately, with CORS configured to allow the
+Vercel domain. The included `vercel.json` rewrites React Router routes to `index.html`, preventing
+404 responses when opening routes such as `/dashboard` or `/feed` directly.
+
 Build for production:
 
 ```bash

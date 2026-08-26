@@ -1,4 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
+import tempfile
 
 
 class Settings(BaseSettings):
@@ -22,3 +24,12 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Vercel functions cannot persist files in the deployment directory. Keep a
+# temporary SQLite fallback for smoke testing; production should use Postgres.
+if os.getenv("VERCEL") and settings.database_url.startswith("sqlite:///./"):
+    settings.database_url = f"sqlite:///{tempfile.gettempdir()}/a3.db"
+
+if settings.database_url.startswith(("postgres://", "postgresql://")) and "+psycopg" not in settings.database_url:
+    settings.database_url = settings.database_url.replace("postgres://", "postgresql+psycopg://", 1)
+    settings.database_url = settings.database_url.replace("postgresql://", "postgresql+psycopg://", 1)

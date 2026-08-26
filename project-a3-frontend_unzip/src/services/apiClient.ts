@@ -132,6 +132,21 @@ export function getIssueApi(issueId: string) {
   return request<BackendIssue>(`/api/issues/${issueId}`);
 }
 
+export interface BackendWorkflowLog {
+  id: string;
+  case_id: string | null;
+  agent: string;
+  action: string;
+  decision: string;
+  requires_approval: boolean;
+  created_at: string;
+}
+
+export function listWorkflowLogsApi(caseId?: string) {
+  const query = caseId ? `?case_id=${encodeURIComponent(caseId)}` : "";
+  return request<BackendWorkflowLog[]>(`/api/workflow/logs${query}`);
+}
+
 export function approveIssueApi(issueId: string, decision: "approve" | "reject") {
   return request<{ issue: BackendIssue }>("/api/workflow/approve", {
     method: "POST",

@@ -52,7 +52,7 @@ def analyze_review(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    analysis = sentinel.analyze_review(payload.review_text, payload.rating)
+    analysis = sentinel.analyze_review(payload.review_text, payload.rating, product.title, product.category)
     return schemas.ReviewAnalyzeResponse(
         analysis=schemas.SentinelAnalysisOut(**analysis),
         case_created=False,
@@ -75,7 +75,7 @@ def create_review(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    analysis = sentinel.analyze_review(payload.review_text, payload.rating)
+    analysis = sentinel.analyze_review(payload.review_text, payload.rating, product.title, product.category)
 
     review = models.Review(
         product_id=payload.product_id,

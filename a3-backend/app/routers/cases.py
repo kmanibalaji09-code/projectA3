@@ -69,6 +69,8 @@ def _create_diagnostic_issue(case: models.CustomerCase, db: Session) -> models.E
     is_display = bool(re.search(r"screen|display|bright|brightness|pixel|touch", facts, re.IGNORECASE))
     is_gps = bool(re.search(r"gps|location|map|navigation", facts, re.IGNORECASE))
     is_accessory = bool(re.search(r"cable|wire|port|plug", facts, re.IGNORECASE))
+    is_camera = bool(re.search(r"camera|photo|blur|focus|lens", facts, re.IGNORECASE))
+    is_software = bool(re.search(r"app|software|crash|freeze|update|bug|error", facts, re.IGNORECASE))
     if is_connectivity:
         title = f"Connectivity instability in {case.product_name}"
         root_cause = "Possible Bluetooth pairing, firmware compatibility, or signal stability fault"
@@ -94,6 +96,16 @@ def _create_diagnostic_issue(case: models.CustomerCase, db: Session) -> models.E
         root_cause = "Possible cable, connector, or port quality fault"
         investigation = "Test known-good accessories, inspect the port, and compare failures across production batches."
         solution = "Correct the connector or accessory defect, strengthen quality checks, and add compatibility tests."
+    elif is_camera:
+        title = f"Camera and imaging issue in {case.product_name}"
+        root_cause = "Possible camera focus, lens, sensor, or image-processing fault"
+        investigation = "Compare focus, sharpness, and exposure across camera modes, lighting conditions, and software versions."
+        solution = "Isolate the lens, sensor, or processing path, correct the defect, and add image-quality regression tests."
+    elif is_software:
+        title = f"Software reliability issue in {case.product_name}"
+        root_cause = "Possible software regression, compatibility, or configuration fault"
+        investigation = "Reproduce the error on supported versions, capture logs, and compare behavior before and after the latest update."
+        solution = "Fix the regression, add a compatibility test for the reported environment, and publish a verified update."
     else:
         title = f"Product issue requiring investigation: {case.product_name}"
         root_cause = "Issue is reproducible under the customer conditions and requires component-level diagnosis"

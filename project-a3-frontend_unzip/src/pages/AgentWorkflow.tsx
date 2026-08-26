@@ -1,11 +1,18 @@
+import { useEffect, useState } from "react";
 import { Layout } from "../components/Layout";
 import { AgentWorkflowPanel } from "../components/AgentWorkflowPanel";
+import { listWorkflowLogsApi } from "../services/apiClient";
 
 export function AgentWorkflow() {
+  const [hasIssue, setHasIssue] = useState(false);
+  useEffect(() => {
+    listWorkflowLogsApi().then((logs) => setHasIssue(logs.some((log) => log.agent === "Product Innovation Architect"))).catch(() => undefined);
+  }, []);
+
   return (
     <Layout title="Agent Workflow" subtitle="How a review becomes an engineering issue">
       <div className="card p-8">
-        <AgentWorkflowPanel hasIssue={false} />
+        <AgentWorkflowPanel hasIssue={hasIssue} />
       </div>
 
       <div className="card mt-4 p-6">

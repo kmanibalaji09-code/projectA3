@@ -73,9 +73,9 @@ Latest customer message: {message}"""
     return None
 
 
-def analyze_review(review_text: str, rating: int) -> dict:
+def analyze_review(review_text: str, rating: int, product_name: str = "", product_category: str = "") -> dict:
     if settings.ai_provider.lower() == "ollama":
-        result = _ollama_analysis(review_text, rating)
+        result = _ollama_analysis(f"Product: {product_name}\nCategory: {product_category}\n{review_text}", rating)
         if result is not None:
             return result
 
@@ -85,8 +85,10 @@ def analyze_review(review_text: str, rating: int) -> dict:
         (r"sound|audio|volume|noise|microphone|call", "Audio / Calls", "Possible audio processing, speaker, or microphone component issue", False),
         (r"screen|display|bright|brightness|pixel|touch", "Display / Touch", "Possible display calibration, panel, or touch-sensor issue", False),
         (r"gps|location|map|navigation", "GPS / Location", "Possible GPS reacquisition or location-signal issue", False),
-        (r"cable|wire|port|plug", "Accessory / Port", "Possible cable, connector, or port quality issue", False),
+        (r"cable|wire|port|plug|adapter", "Accessory / Port", "Possible cable, connector, or port quality issue", False),
         (r"break|crack|loose|material|build|quality", "Build Quality", "Possible material, assembly, or durability issue", False),
+        (r"camera|photo|blur|focus|lens", "Camera / Imaging", "Possible camera focus, lens, sensor, or image-processing issue", False),
+        (r"app|software|crash|freeze|update|bug|error", "Software / App", "Possible software regression, compatibility, or configuration issue", False),
     ]
     matched_rule = next((rule for rule in category_rules if re.search(rule[0], review_text, re.IGNORECASE)), None)
 

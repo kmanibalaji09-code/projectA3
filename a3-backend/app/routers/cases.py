@@ -65,11 +65,35 @@ def _case_detail_output(case: models.CustomerCase) -> dict:
 def _create_diagnostic_issue(case: models.CustomerCase, db: Session) -> models.EngineeringIssue:
     facts = " ".join(case.known_facts or [])
     is_connectivity = bool(re.search(r"connect|disconnect|bluetooth|pair|wifi|signal", facts, re.IGNORECASE))
+    is_audio = bool(re.search(r"sound|audio|volume|noise|microphone|call", facts, re.IGNORECASE))
+    is_display = bool(re.search(r"screen|display|bright|brightness|pixel|touch", facts, re.IGNORECASE))
+    is_gps = bool(re.search(r"gps|location|map|navigation", facts, re.IGNORECASE))
+    is_accessory = bool(re.search(r"cable|wire|port|plug", facts, re.IGNORECASE))
     if is_connectivity:
         title = f"Connectivity instability in {case.product_name}"
         root_cause = "Possible Bluetooth pairing, firmware compatibility, or signal stability fault"
         investigation = "Check connection logs across supported devices, reproduce during calls and music playback, and verify firmware compatibility."
         solution = "Clear pairing state, test the latest firmware, improve reconnection handling, and validate stability across supported phones and laptops."
+    elif is_audio:
+        title = f"Audio or call quality issue in {case.product_name}"
+        root_cause = "Possible audio processing, speaker, or microphone component fault"
+        investigation = "Compare playback and call behavior across apps and devices, checking permissions, volume handling, and firmware."
+        solution = "Isolate the failing audio path, correct processing or firmware behavior, and add playback and call regression tests."
+    elif is_display:
+        title = f"Display or touch issue in {case.product_name}"
+        root_cause = "Possible display calibration, panel, or touch-sensor fault"
+        investigation = "Reproduce across brightness settings, inspect recent software changes, and test the affected panel or touch sensor."
+        solution = "Correct display calibration or replace the failing panel/sensor, then verify brightness and touch regression coverage."
+    elif is_gps:
+        title = f"GPS and location instability in {case.product_name}"
+        root_cause = "Possible GPS reacquisition, permissions, or location-signal fault"
+        investigation = "Compare signal behavior across locations, permissions, firmware, and map applications."
+        solution = "Improve signal reacquisition and permissions handling, then validate location accuracy across supported environments."
+    elif is_accessory:
+        title = f"Accessory or port quality issue in {case.product_name}"
+        root_cause = "Possible cable, connector, or port quality fault"
+        investigation = "Test known-good accessories, inspect the port, and compare failures across production batches."
+        solution = "Correct the connector or accessory defect, strengthen quality checks, and add compatibility tests."
     else:
         title = f"Product issue requiring investigation: {case.product_name}"
         root_cause = "Issue is reproducible under the customer conditions and requires component-level diagnosis"

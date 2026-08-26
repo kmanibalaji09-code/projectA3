@@ -79,17 +79,23 @@ def analyze_review(review_text: str, rating: int) -> dict:
         if result is not None:
             return result
 
-    is_battery_related = bool(re.search(r"battery|charg|warm|hot|overheat", review_text, re.IGNORECASE))
+    category_rules = [
+        (r"battery|charg|warm|hot|overheat|drain", "Battery / Charging", "Possible battery degradation or charging-controller issue", True),
+        (r"connect|disconnect|bluetooth|pair|wifi|signal", "Connectivity", "Possible pairing, firmware compatibility, or signal stability issue", False),
+        (r"sound|audio|volume|noise|microphone|call", "Audio / Calls", "Possible audio processing, speaker, or microphone component issue", False),
+        (r"screen|display|bright|brightness|pixel|touch", "Display / Touch", "Possible display calibration, panel, or touch-sensor issue", False),
+        (r"gps|location|map|navigation", "GPS / Location", "Possible GPS reacquisition or location-signal issue", False),
+        (r"cable|wire|port|plug", "Accessory / Port", "Possible cable, connector, or port quality issue", False),
+        (r"break|crack|loose|material|build|quality", "Build Quality", "Possible material, assembly, or durability issue", False),
+    ]
+    matched_rule = next((rule for rule in category_rules if re.search(rule[0], review_text, re.IGNORECASE)), None)
 
     sentiment = "Negative" if rating <= 2 else "Neutral" if rating == 3 else "Positive"
     emotion = "Frustrated" if rating <= 2 else "Satisfied"
-    severity = "High" if is_battery_related else ("Medium" if rating <= 2 else "Low")
-    category = "Battery / Charging" if is_battery_related else "General"
-    root_cause = (
-        "Possible battery degradation / charging controller issue"
-        if is_battery_related
-        else "Requires further diagnosis"
-    )
+    category = matched_rule[1] if matched_rule else "General Product Experience"
+    root_cause = matched_rule[2] if matched_rule else "Requires further diagnosis from customer evidence"
+    safety_concern = matched_rule[3] if matched_rule else False
+    severity = "High" if safety_concern else ("Medium" if rating <= 2 else "Low")
 
     return {
         "sentiment": sentiment,
@@ -98,9 +104,9 @@ def analyze_review(review_text: str, rating: int) -> dict:
         "category": category,
         "rootCause": root_cause,
         "customerProblem": review_text,
-        "safetyConcern": is_battery_related,
+        "safetyConcern": safety_concern,
         "confidence": 0.82,
-        "missingInformation": ["Usage patterns", "Charging habits"],
+        "missingInformation": ["When the issue started", "Steps that reproduce the issue", "Device or environment details"],
     }
 
 
@@ -113,8 +119,12 @@ def generate_customer_response(message: str, known_facts: list[str]) -> dict:
     updated_facts = [*known_facts, message]
     customer_messages = max(0, len(updated_facts) - 1)
     all_facts = " ".join(updated_facts)
-    is_battery_issue = bool(re.search(r"battery|charg|warm|hot|overheat", all_facts, re.IGNORECASE))
+    is_battery_issue = bool(re.search(r"battery|charg|warm|hot|overheat|drain", all_facts, re.IGNORECASE))
     is_connectivity_issue = bool(re.search(r"connect|disconnect|bluetooth|pair|wifi|signal", all_facts, re.IGNORECASE))
+    is_audio_issue = bool(re.search(r"sound|audio|volume|noise|microphone|call", all_facts, re.IGNORECASE))
+    is_display_issue = bool(re.search(r"screen|display|bright|brightness|pixel|touch", all_facts, re.IGNORECASE))
+    is_gps_issue = bool(re.search(r"gps|location|map|navigation", all_facts, re.IGNORECASE))
+    is_accessory_issue = bool(re.search(r"cable|wire|port|plug", all_facts, re.IGNORECASE))
 
     questions = (
         [
@@ -129,6 +139,14 @@ def generate_customer_response(message: str, known_facts: list[str]) -> dict:
             "Is there any physical damage, unusual smell, swelling, or recent firmware/software change?",
         ]
     )
+    if is_audio_issue and not is_connectivity_issue:
+        questions = ["When did the audio problem begin, and does it affect playback, calls, or both?", "Does it happen with another app, device, or headset?", "Have you checked volume, permissions, and the latest firmware?", "Can you reproduce it at different volumes or distances?"]
+    elif is_display_issue:
+        questions = ["When did the display problem begin, and is it always visible?", "Does it affect brightness, touch, or specific pixels?", "Have you tried another brightness setting or restarted the device?", "Is there physical damage or a recent software update?"]
+    elif is_gps_issue:
+        questions = ["Where does the location problem happen, indoors or outdoors?", "Does it affect all apps or only one map app?", "How long does it take to acquire a location signal?", "What phone settings, permissions, and software version are active?"]
+    elif is_accessory_issue:
+        questions = ["When did the cable or port problem begin?", "Does another cable or accessory work in the same port?", "Is the failure constant or intermittent when the cable moves?", "Is there visible wear, debris, looseness, or damage?"]
     if customer_messages <= len(questions):
         response = (
             "Thanks, I recorded that detail. "
@@ -139,6 +157,14 @@ def generate_customer_response(message: str, known_facts: list[str]) -> dict:
             "Thanks, I have enough detail to narrow this down. The pattern points to a possible Bluetooth pairing, firmware, or signal stability problem. "
             "The developer can investigate connection logs, firmware compatibility, and pairing behavior across devices."
         )
+    elif is_audio_issue:
+        response = "The evidence points to an audio, speaker, or microphone path issue. The developer should compare playback and call behavior across apps and devices, then test audio processing and firmware changes."
+    elif is_display_issue:
+        response = "The evidence points to a display calibration, panel, or touch-sensor issue. The developer should reproduce it across brightness settings, inspect software updates, and test the affected panel or sensor."
+    elif is_gps_issue:
+        response = "The evidence points to GPS reacquisition or location-signal instability. The developer should compare signal behavior across locations, permissions, firmware, and map applications."
+    elif is_accessory_issue:
+        response = "The evidence points to a cable, connector, or port quality issue. The developer should test known-good accessories, inspect the port, and compare failures across production batches."
     elif is_battery_issue:
         response = (
             "Thanks, I have enough detail to narrow this down. The pattern points to a possible "

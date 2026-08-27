@@ -1,0 +1,20 @@
+{
+  "battery_charging": ["rapid_battery_drain", "battery_not_charging", "slow_charging", "charging_overheating", "battery_percentage_jump", "unexpected_shutdown", "battery_swelling", "charger_detection_failure"],
+  "bluetooth_connectivity": ["random_disconnect", "pairing_failure", "connection_drop", "audio_stutter", "device_not_found", "range_problem"],
+  "wifi_connectivity": ["wifi_drop", "slow_wifi", "network_not_found", "authentication_loop"],
+  "gps_location": ["wrong_location", "gps_lock_delay", "location_drift", "navigation_route_error"],
+  "camera": ["autofocus_failure", "blurred_photo", "camera_crash", "exposure_error"],
+  "microphone": ["voice_not_recorded", "muffled_voice", "call_microphone_drop"],
+  "speaker_audio": ["low_volume", "audio_distortion", "no_sound", "audio_balance_error"],
+  "display": ["screen_flicker", "dead_pixels", "brightness_failure", "screen_blackout"],
+  "touchscreen": ["touch_not_registered", "ghost_touch", "touch_lag", "edge_touch_failure"],
+  "software_crash": ["app_crash", "freeze", "boot_loop", "unexpected_error"],
+  "firmware": ["update_failure", "regression_after_update", "firmware_install_loop"],
+  "performance": ["slow_response", "overheating_under_load", "lag", "slow_startup"],
+  "payments": ["duplicate_charge", "payment_declined", "wrong_amount"],
+  "shipping_delivery": ["tracking_missing", "shipping_delay", "late_delivery", "delivery_missing", "wrong_item_delivered"],
+  "account_authentication": ["login_failure", "session_expired", "verification_failure", "account_locked"],
+  "build_quality": ["loose_part", "surface_defect", "premature_wear", "cracked_body"],
+  "compatibility": ["unsupported_device", "accessory_incompatible", "os_compatibility_failure"],
+  "safety": ["smoke_or_burning_smell", "electric_shock", "unsafe_heat", "swollen_component"]
+}

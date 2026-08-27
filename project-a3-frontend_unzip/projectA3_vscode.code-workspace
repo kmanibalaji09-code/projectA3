@@ -7,5 +7,7 @@
 			"path": "../a3-backend"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "project-a3-frontend_unzip"
+	}
 }

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user, require_developer
 from app import models, schemas
-from app.services import sentinel
+from app.services import optimized_sentinel as sentinel  # Use optimized service for <30ms response times
 
 router = APIRouter(prefix="/api/cases", tags=["cases"])
 
@@ -170,7 +170,8 @@ def send_case_message(
 
     db.add(models.CaseMessage(case_id=case.id, sender="customer", text=payload.message))
 
-    result = sentinel.generate_customer_response(payload.message, case.known_facts or [])
+    # Use optimized agent for <30ms response time with smart Q&A flows
+    result = sentinel.generate_customer_response_v2(payload.message, case.known_facts or [], case.id)
 
     db.add(models.CaseMessage(case_id=case.id, sender="agent", text=result["response"]))
     case.known_facts = result["known_facts"]

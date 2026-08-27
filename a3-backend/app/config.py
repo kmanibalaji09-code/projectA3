@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./a3.db"
 
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174"
 
     ai_provider: str = "mock"
     ollama_url: str = "http://127.0.0.1:11434"

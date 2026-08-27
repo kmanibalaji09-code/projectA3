@@ -1,0 +1,20 @@
+{
+  "rapid_battery_drain": ["cell_capacity_degradation", "background_power_consumption", "power_management_firmware"],
+  "charging_overheating": ["charging_controller_fault", "damaged_cable_or_adapter", "thermal_management_failure"],
+  "random_disconnect": ["pairing_cache_conflict", "firmware_compatibility", "radio_interference"],
+  "pairing_failure": ["stale_pairing_state", "unsupported_bluetooth_profile", "device_limit_reached"],
+  "wifi_drop": ["router_interference", "driver_regression", "weak_signal"],
+  "wrong_location": ["gps_multipath", "permission_configuration", "stale_location_cache"],
+  "autofocus_failure": ["lens_obstruction", "focus_motor_fault", "image_processing_regression"],
+  "audio_distortion": ["speaker_damage", "audio_codec_regression", "excessive_gain"],
+  "screen_flicker": ["display_driver_regression", "panel_connection", "refresh_rate_configuration"],
+  "touch_not_registered": ["touch_controller_fault", "screen_protector_interference", "firmware_regression"],
+  "app_crash": ["software_regression", "corrupt_local_state", "unsupported_os_version"],
+  "slow_response": ["resource_exhaustion", "background_processes", "thermal_throttling"],
+  "duplicate_charge": ["payment_retry_race", "gateway_timeout", "duplicate_order_submission"],
+  "late_delivery": ["carrier_delay", "warehouse_backlog", "incorrect_tracking_event"],
+  "login_failure": ["wrong_credentials", "expired_session", "verification_service_failure"],
+  "loose_part": ["assembly_tolerance", "fastener_failure", "impact_damage"],
+  "unsupported_device": ["missing_driver_support", "os_api_difference", "hardware_capability_gap"],
+  "unsafe_heat": ["thermal_runaway_risk", "short_circuit", "charging_controller_fault"]
+}

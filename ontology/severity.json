@@ -1,0 +1,6 @@
+{
+  "low": {"description": "Minor inconvenience, workaround available", "safety": false},
+  "medium": {"description": "Material loss of expected functionality", "safety": false},
+  "high": {"description": "Major failure, data or service impact", "safety": false},
+  "critical": {"description": "Potential injury, fire, electrical, privacy, or financial harm", "safety": true}
+}

@@ -60,7 +60,7 @@ export function Dashboard() {
   ];
 
   return (
-    <Layout title="Developer Dashboard" subtitle="Welcome back, Alex 👋">
+    <Layout title="Developer Dashboard" subtitle="Welcome back, Jordan 👋">
       <div className="mb-6 overflow-hidden rounded-[26px] border border-accent-100 bg-gradient-to-r from-slate-950 via-indigo-950 to-accent-800 p-6 text-white shadow-xl">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-2xl">
@@ -84,6 +84,27 @@ export function Dashboard() {
               <div className="text-xl font-black">96%</div>
               <div className="text-[10px] uppercase tracking-[0.14em] text-indigo-100">clarity score</div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 card p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-bold text-ink-900">What the agents learned</h2>
+          <span className="rounded-full bg-accent-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-accent-700">signal map</span>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-ink-100 bg-ink-50 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-accent-700">1. Product vocabulary</p>
+            <p className="mt-2 text-sm leading-6 text-ink-600">The agents map issues across 10K+ product terms, including battery, heat, connectivity, charging, audio, software, and safety phrases.</p>
+          </div>
+          <div className="rounded-2xl border border-ink-100 bg-ink-50 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-accent-700">2. Emotional intent</p>
+            <p className="mt-2 text-sm leading-6 text-ink-600">They detect urgency from customer tone and rating patterns so the system can escalate frustration and safety risks faster.</p>
+          </div>
+          <div className="rounded-2xl border border-ink-100 bg-ink-50 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-accent-700">3. Action routing</p>
+            <p className="mt-2 text-sm leading-6 text-ink-600">Each signal is tied to a recommended diagnostic flow and a likely engineering path instead of a generic canned response.</p>
           </div>
         </div>
       </div>

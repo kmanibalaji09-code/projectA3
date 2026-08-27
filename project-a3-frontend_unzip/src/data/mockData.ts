@@ -9,10 +9,10 @@ import type {
 
 export const currentDeveloper: User = {
   id: "dev-1",
-  name: "Alex Developer",
-  email: "alex@a3-demo.dev",
+  name: "Jordan Diaz",
+  email: "jordan@a3-demo.dev",
   role: "DEVELOPER",
-  avatarInitials: "AD",
+  avatarInitials: "JD",
 };
 
 export const currentCustomer: User = {

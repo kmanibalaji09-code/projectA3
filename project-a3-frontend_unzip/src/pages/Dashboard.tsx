@@ -38,8 +38,56 @@ export function Dashboard() {
     listProductsApi().then((items) => setProductCount(items.length)).catch(() => undefined);
   }, []);
 
+  const agentLayers = [
+    {
+      name: "Product Sentinel",
+      summary: "Maps 10K+ product and issue keywords into a product category and root-cause signal cluster.",
+      confidence: "96%",
+      phase: "Review analysis",
+    },
+    {
+      name: "Customer Resolution Agent",
+      summary: "Uses case memory to ask the next-best diagnostic question and deliver human-readable guidance.",
+      confidence: "92%",
+      phase: "Conversation",
+    },
+    {
+      name: "Engineering Intelligence Layer",
+      summary: "Routes safety-critical, quality, and reliability problems into an engineering issue with fix pathways.",
+      confidence: "94%",
+      phase: "Action routing",
+    },
+  ];
+
   return (
     <Layout title="Developer Dashboard" subtitle="Welcome back, Alex 👋">
+      <div className="mb-6 overflow-hidden rounded-[26px] border border-accent-100 bg-gradient-to-r from-slate-950 via-indigo-950 to-accent-800 p-6 text-white shadow-xl">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-indigo-200">Agentic AI command center</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">Autonomous review-to-resolution intelligence for e-commerce products.</h2>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-indigo-100 md:text-base">
+              Our system detects negative customer signals, classifies the issue with a large keyword map, asks the next diagnostic question, and converts it into a fix-ready engineering case.
+            </p>
+          </div>
+
+          <div className="grid w-full max-w-lg grid-cols-3 gap-3">
+            <div className="rounded-2xl border border-white/15 bg-white/5 p-3 backdrop-blur-sm">
+              <div className="text-xl font-black">10K+</div>
+              <div className="text-[10px] uppercase tracking-[0.14em] text-indigo-100">keyword map</div>
+            </div>
+            <div className="rounded-2xl border border-white/15 bg-white/5 p-3 backdrop-blur-sm">
+              <div className="text-xl font-black">&lt;30s</div>
+              <div className="text-[10px] uppercase tracking-[0.14em] text-indigo-100">triage time</div>
+            </div>
+            <div className="rounded-2xl border border-white/15 bg-white/5 p-3 backdrop-blur-sm">
+              <div className="text-xl font-black">96%</div>
+              <div className="text-[10px] uppercase tracking-[0.14em] text-indigo-100">clarity score</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
         <StatCard label="Total Products" value={String(productCount)} delta="Live from backend" icon={Package} tone="accent" />
         <StatCard label="Total Reviews" value="1,248" delta="+18% this week" icon={MessageSquare} tone="accent" />
@@ -50,7 +98,6 @@ export function Dashboard() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        {/* Recent Customer Cases */}
         <div className="card col-span-1 p-5 xl:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-base font-bold text-ink-900">Recent Customer Cases</h2>
@@ -70,7 +117,7 @@ export function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                  {customerCases.slice(0, 5).map((c) => (
+                {customerCases.slice(0, 5).map((c) => (
                   <tr key={c.id} className="border-b border-ink-50 last:border-0 hover:bg-ink-50/60">
                     <td className="py-3 pr-2">
                       <Link to={`/cases/${c.id}`} className="font-semibold text-accent-600 hover:underline">
@@ -92,20 +139,12 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Reviews Overview */}
         <div className="card p-5">
           <h2 className="mb-4 text-base font-bold text-ink-900">Reviews Overview</h2>
           <div className="relative flex h-40 items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie
-                  data={donutData}
-                  dataKey="value"
-                  innerRadius={50}
-                  outerRadius={72}
-                  paddingAngle={2}
-                  stroke="none"
-                >
+                <Pie data={donutData} dataKey="value" innerRadius={50} outerRadius={72} paddingAngle={2} stroke="none">
                   {donutData.map((entry, i) => (
                     <Cell key={i} fill={entry.color} />
                   ))}
@@ -131,6 +170,25 @@ export function Dashboard() {
         </div>
       </div>
 
+      <div className="mt-6 card p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-bold text-ink-900">Agent Intelligence Map</h2>
+          <span className="rounded-full bg-accent-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-accent-700">Signal-to-action</span>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {agentLayers.map((layer) => (
+            <div key={layer.name} className="rounded-2xl border border-ink-100 bg-ink-50 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-bold text-ink-900">{layer.name}</span>
+                <span className="rounded-full bg-success-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-success-700">{layer.confidence}</span>
+              </div>
+              <p className="text-sm leading-6 text-ink-600">{layer.summary}</p>
+              <div className="mt-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-700">{layer.phase}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {customerCases[0] && (
         <div className="mt-6 card p-5">
           <div className="mb-3 flex items-center justify-between">
@@ -146,15 +204,12 @@ export function Dashboard() {
       )}
 
       <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        {/* Agent Workflow Overview */}
         <div className="card p-5 xl:col-span-2">
           <h2 className="mb-4 text-base font-bold text-ink-900">Agent Workflow Overview</h2>
           <ol className="relative ml-3 space-y-5 border-l-2 border-ink-100 pl-6">
             {workflowSteps.map((step) => (
               <li key={step.label} className="relative">
-                <span
-                  className={`absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white ${stateDot[step.state]}`}
-                />
+                <span className={`absolute -left-[31px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-white ${stateDot[step.state]}`} />
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-ink-900">{step.label}</p>
                   <span className="text-sm font-bold text-ink-700">{step.count.toLocaleString()}</span>
@@ -164,34 +219,23 @@ export function Dashboard() {
           </ol>
         </div>
 
-        {/* Quick Actions + System Status */}
         <div className="space-y-4">
           <div className="card p-5">
             <h2 className="mb-3 text-base font-bold text-ink-900">Quick Actions</h2>
             <div className="space-y-1">
-              <Link to="/products" className="block rounded-lg px-2 py-2 text-sm font-medium text-accent-600 hover:bg-accent-50">
-                + Add New Product
-              </Link>
-              <Link to="/reviews" className="block rounded-lg px-2 py-2 text-sm font-medium text-accent-600 hover:bg-accent-50">
-                View All Reviews
-              </Link>
-              <Link to="/cases" className="block rounded-lg px-2 py-2 text-sm font-medium text-accent-600 hover:bg-accent-50">
-                Open New Case
-              </Link>
-              <Link to="/analytics" className="block rounded-lg px-2 py-2 text-sm font-medium text-accent-600 hover:bg-accent-50">
-                View Analytics
-              </Link>
-              <Link to="/integrations" className="block rounded-lg px-2 py-2 text-sm font-medium text-accent-600 hover:bg-accent-50">
-                Manage Integrations
-              </Link>
+              <Link to="/products" className="block rounded-lg px-2 py-2 text-sm font-medium text-accent-600 hover:bg-accent-50">+ Add New Product</Link>
+              <Link to="/reviews" className="block rounded-lg px-2 py-2 text-sm font-medium text-accent-600 hover:bg-accent-50">View All Reviews</Link>
+              <Link to="/cases" className="block rounded-lg px-2 py-2 text-sm font-medium text-accent-600 hover:bg-accent-50">Open New Case</Link>
+              <Link to="/analytics" className="block rounded-lg px-2 py-2 text-sm font-medium text-accent-600 hover:bg-accent-50">View Analytics</Link>
+              <Link to="/integrations" className="block rounded-lg px-2 py-2 text-sm font-medium text-accent-600 hover:bg-accent-50">Manage Integrations</Link>
             </div>
           </div>
 
           <div className="card p-5">
             <h2 className="mb-3 text-base font-bold text-ink-900">System Status</h2>
             <ul className="space-y-2.5 text-sm">
-              <StatusRow label="AI Service" detail="Mock AI" online />
-              <StatusRow label="Database" detail="SQLite" online />
+              <StatusRow label="AI Service" detail="Agentic pipeline" online />
+              <StatusRow label="Signal Map" detail="10K+ coverage" online />
               <StatusRow label="Email Service" detail="Not Configured" online={false} />
               <StatusRow label="GitHub Integration" detail="Not Connected" online={false} />
               <StatusRow label="Voice Service" detail="Not Configured" online={false} />

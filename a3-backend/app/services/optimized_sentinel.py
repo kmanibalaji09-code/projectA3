@@ -35,6 +35,37 @@ def _load_training_data():
 def _get_training_data():
     return _load_training_data()
 
+
+def _normalize_signal_text(value: str) -> str:
+    return re.sub(r"[^a-z0-9\s]", " ", (value or "").lower()).strip()
+
+
+def _score_category_signals(text: str, keywords: list[str]) -> tuple[int, list[str]]:
+    normalized_text = _normalize_signal_text(text)
+    score = 0
+    hits: list[str] = []
+    seen = set()
+
+    for keyword in keywords:
+        normalized_keyword = _normalize_signal_text(keyword)
+        if not normalized_keyword:
+            continue
+        if normalized_keyword in normalized_text:
+            weight = 3 if " " in normalized_keyword else 1
+            score += weight
+            if keyword not in seen:
+                hits.append(keyword)
+                seen.add(keyword)
+        elif " " in normalized_keyword:
+            compact = normalized_keyword.replace(" ", "")
+            if compact and compact in normalized_text.replace(" ", ""):
+                score += 2
+                if keyword not in seen:
+                    hits.append(keyword)
+                    seen.add(keyword)
+    return score, hits[:6]
+
+
 def analyze_review_v2(review_text: str, rating: int, product_name: str = "", product_category: str = "") -> dict:
     """
     Enterprise review analysis with 10,000+ keywords
@@ -46,9 +77,8 @@ def analyze_review_v2(review_text: str, rating: int, product_name: str = "", pro
 
     training_data = _get_training_data()
     categories = training_data.get("categories", {})
-    combined_text = f"{product_name} {product_category} {review_text}".lower()
+    combined_text = f"{product_name} {product_category} {review_text}"
 
-    # Score all categories
     category_scores = {}
     matched_keywords = {}
 
@@ -56,24 +86,24 @@ def analyze_review_v2(review_text: str, rating: int, product_name: str = "", pro
         keywords = category_data.get("keywords", [])
         if not keywords:
             continue
-
-        keyword_matches = sum(1 for kw in keywords if kw in combined_text)
-        if keyword_matches > 0:
-            match_score = keyword_matches / max(len(keywords), 1)
-            category_scores[category_name] = match_score
-            matched_keywords[category_name] = keyword_matches
+        score, hits = _score_category_signals(combined_text, keywords)
+        if score > 0:
+            category_scores[category_name] = score
+            matched_keywords[category_name] = hits
 
     if category_scores:
         best_category = max(category_scores, key=category_scores.get)
         category_data = categories.get(best_category, {})
-        matched_count = matched_keywords.get(best_category, 0)
-        confidence = min(0.99, category_scores[best_category] + (matched_count / 100) * 0.2)
+        matched_examples = matched_keywords.get(best_category, [])
+        best_score = category_scores[best_category]
+        confidence = min(0.99, 0.58 + (best_score / max(len(category_data.get("keywords", [])) or 1, 1)) * 0.35 + (len(matched_examples) / 25) * 0.12)
     else:
         best_category = "General Product Experience"
         category_data = categories.get(best_category, {})
         confidence = 0.65
+        matched_examples = []
 
-    safety_concern = category_data.get("safety_concern", False)
+    safety_concern = bool(category_data.get("safety_concern", False))
     if safety_concern and rating <= 1:
         severity = "Critical"
     elif safety_concern or rating <= 2:
@@ -86,15 +116,15 @@ def analyze_review_v2(review_text: str, rating: int, product_name: str = "", pro
     sentiment_map = {1: ("Negative", "Very Frustrated"), 2: ("Negative", "Frustrated"), 3: ("Neutral", "Neutral"), 4: ("Positive", "Satisfied"), 5: ("Positive", "Very Satisfied")}
     sentiment, emotion = sentiment_map.get(rating, ("Neutral", "Neutral"))
 
-    matched_keyword_examples = [kw for kw in category_data.get("keywords", [])[:5] if kw in combined_text]
-    if matched_keyword_examples:
+    if matched_examples:
+        signal_string = ", ".join(matched_examples[:3])
         human_summary = (
-            f"This review pattern points to {best_category.lower()} behavior linked to {', '.join(matched_keyword_examples[:3])}. "
-            f"The issue is consistent with a product-level defect or usage pattern that deserves technical review."
+            f"This review pattern maps to {best_category.lower()} with a strong signal cluster around {signal_string}. "
+            f"The symptoms point to a plausible product defect or usage pattern that should be reviewed by engineering."
         )
     else:
         human_summary = (
-            f"This review suggests a {best_category.lower()} problem that needs closer diagnosis before a fix is confirmed."
+            f"This review suggests a {best_category.lower()} concern that needs deeper diagnosis before a fix is confirmed."
         )
 
     short_problem = review_text.strip()
@@ -109,11 +139,11 @@ def analyze_review_v2(review_text: str, rating: int, product_name: str = "", pro
         "rootCause": human_summary,
         "customerProblem": short_problem,
         "safetyConcern": safety_concern,
-        "confidence": confidence,
-        "missingInformation": training_data.get("categories", {}).get(best_category, {}).get("qa_flow", [])[:3] or ["When it started", "Steps to reproduce", "Environment details"],
+        "confidence": round(confidence, 2),
+        "missingInformation": (training_data.get("categories", {}).get(best_category, {}).get("qa_flow", []) or ["When it started", "Steps to reproduce", "Environment details"])[:3],
         "category_score": category_scores,
-        "matched_keywords_count": matched_keywords.get(best_category, 0),
-        "typical_duration_minutes": category_data.get("typical_duration_minutes", 15)
+        "matched_keywords_count": len(matched_examples),
+        "typical_duration_minutes": category_data.get("typical_duration_minutes", 15),
     }
 
 
@@ -130,17 +160,18 @@ def generate_customer_response_v2(message: str, known_facts: list[str], case_id:
     categories = training_data.get("categories", {})
     qa_flows = training_data.get("qa_flows", {})
 
-    all_facts = " ".join(known_facts + [message]).lower()
+    all_facts = " ".join(known_facts + [message])
     category_scores = {}
+    matched_categories = {}
 
     for category_name, category_data in categories.items():
         keywords = category_data.get("keywords", [])
-        keyword_matches = sum(1 for kw in keywords if kw in all_facts)
-        if keyword_matches > 0:
-            category_scores[category_name] = keyword_matches
+        score, hits = _score_category_signals(all_facts, keywords)
+        if score > 0:
+            category_scores[category_name] = score
+            matched_categories[category_name] = hits
 
     detected_category = max(category_scores, key=category_scores.get) if category_scores else None
-
     updated_facts = known_facts + [message]
     question_index = len(updated_facts) - 1
 
@@ -149,7 +180,7 @@ def generate_customer_response_v2(message: str, known_facts: list[str], case_id:
 
         if question_index < len(questions):
             response = (
-                f"Thanks for the extra detail. Based on what you've shared, this looks like a {detected_category.lower()} issue. "
+                f"Thanks for the extra detail. Based on the signal pattern, this looks like a {detected_category.lower()} issue. "
                 f"{questions[question_index]}"
             )
         else:
@@ -158,18 +189,19 @@ def generate_customer_response_v2(message: str, known_facts: list[str], case_id:
 
             if category_data.get("safety_concern"):
                 response = (
-                    "We take this seriously and the symptoms you described could indicate a safety-related issue. "
-                    "Please stop using the product and contact support immediately so we can assess it safely and arrange the correct next step."
+                    "The symptoms you described could indicate a safety-related issue, so we are treating this seriously. "
+                    "Please stop using the product and connect with support immediately so we can assess it safely and arrange the correct next step."
                 )
             elif solutions:
-                solution_lines = " ".join(f"{sol}" for sol in solutions[:2])
+                solution_lines = " ".join(solutions[:2])
                 response = (
-                    f"Thank you for walking us through that. The pattern in your report suggests a {detected_category.lower()} issue, and the most likely next steps are: {solution_lines}. "
-                    "Our engineering team will review the details and confirm the best fix path."
+                    f"The issue pattern points to {detected_category.lower()} behavior. The most likely next steps are: {solution_lines}. "
+                    "Our engineering team will review the case and confirm the best fix path."
                 )
             else:
                 response = (
-                    f"Thank you for the detail. We now have enough information to treat this as a {detected_category.lower()} issue, and the engineering team will review the report and build a fix plan."
+                    f"We have enough information to treat this as a {detected_category.lower()} issue. "
+                    "The engineering team will review the report and build a fix plan."
                 )
     else:
         response = "Thank you for that detail. Could you tell us when this issue began and what you were doing at the moment it happened?"
@@ -180,7 +212,7 @@ def generate_customer_response_v2(message: str, known_facts: list[str], case_id:
         "detected_category": detected_category,
         "conversation_turn": question_index,
         "case_id": case_id,
-        "is_final": question_index >= 5
+        "is_final": question_index >= 5,
     }
 
 def get_agent_insights(case_facts: list[str]) -> dict:

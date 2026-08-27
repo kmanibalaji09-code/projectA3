@@ -43,27 +43,26 @@ def analyze_review_v2(review_text: str, rating: int, product_name: str = "", pro
     if settings.ai_provider.lower() == "ollama":
         # TODO: wire in CrewAI/Ollama later
         pass
-    
+
     training_data = _get_training_data()
     categories = training_data.get("categories", {})
     combined_text = f"{product_name} {product_category} {review_text}".lower()
-    
+
     # Score all categories
     category_scores = {}
     matched_keywords = {}
-    
+
     for category_name, category_data in categories.items():
         keywords = category_data.get("keywords", [])
         if not keywords:
             continue
-        
+
         keyword_matches = sum(1 for kw in keywords if kw in combined_text)
         if keyword_matches > 0:
             match_score = keyword_matches / max(len(keywords), 1)
             category_scores[category_name] = match_score
             matched_keywords[category_name] = keyword_matches
-    
-    # Determine best category
+
     if category_scores:
         best_category = max(category_scores, key=category_scores.get)
         category_data = categories.get(best_category, {})
@@ -73,8 +72,7 @@ def analyze_review_v2(review_text: str, rating: int, product_name: str = "", pro
         best_category = "General Product Experience"
         category_data = categories.get(best_category, {})
         confidence = 0.65
-    
-    # Severity determination
+
     safety_concern = category_data.get("safety_concern", False)
     if safety_concern and rating <= 1:
         severity = "Critical"
@@ -84,25 +82,32 @@ def analyze_review_v2(review_text: str, rating: int, product_name: str = "", pro
         severity = "Medium"
     else:
         severity = "Low"
-    
-    # Sentiment with emotional tone
+
     sentiment_map = {1: ("Negative", "Very Frustrated"), 2: ("Negative", "Frustrated"), 3: ("Neutral", "Neutral"), 4: ("Positive", "Satisfied"), 5: ("Positive", "Very Satisfied")}
     sentiment, emotion = sentiment_map.get(rating, ("Neutral", "Neutral"))
-    
-    # Human-readable root cause
-    matched_keyword_examples = [kw for kw in category_data.get("keywords", [])[:3] if kw in combined_text]
+
+    matched_keyword_examples = [kw for kw in category_data.get("keywords", [])[:5] if kw in combined_text]
     if matched_keyword_examples:
-        cause_description = f"Issue indicators: {', '.join(matched_keyword_examples)}"
+        human_summary = (
+            f"This review pattern points to {best_category.lower()} behavior linked to {', '.join(matched_keyword_examples[:3])}. "
+            f"The issue is consistent with a product-level defect or usage pattern that deserves technical review."
+        )
     else:
-        cause_description = f"Categorized as {best_category}"
-    
+        human_summary = (
+            f"This review suggests a {best_category.lower()} problem that needs closer diagnosis before a fix is confirmed."
+        )
+
+    short_problem = review_text.strip()
+    if len(short_problem) > 240:
+        short_problem = f"{short_problem[:237].rstrip()}..."
+
     return {
         "sentiment": sentiment,
         "emotion": emotion,
         "severity": severity,
         "category": best_category,
-        "rootCause": cause_description,
-        "customerProblem": review_text[:200],
+        "rootCause": human_summary,
+        "customerProblem": short_problem,
         "safetyConcern": safety_concern,
         "confidence": confidence,
         "missingInformation": training_data.get("categories", {}).get(best_category, {}).get("qa_flow", [])[:3] or ["When it started", "Steps to reproduce", "Environment details"],
@@ -110,6 +115,7 @@ def analyze_review_v2(review_text: str, rating: int, product_name: str = "", pro
         "matched_keywords_count": matched_keywords.get(best_category, 0),
         "typical_duration_minutes": category_data.get("typical_duration_minutes", 15)
     }
+
 
 def generate_customer_response_v2(message: str, known_facts: list[str], case_id: str = "") -> dict:
     """
@@ -119,58 +125,55 @@ def generate_customer_response_v2(message: str, known_facts: list[str], case_id:
     if settings.ai_provider.lower() == "ollama":
         # TODO: wire in CrewAI later
         pass
-    
+
     training_data = _get_training_data()
     categories = training_data.get("categories", {})
     qa_flows = training_data.get("qa_flows", {})
-    
+
     all_facts = " ".join(known_facts + [message]).lower()
     category_scores = {}
-    
-    # Find best matching category
+
     for category_name, category_data in categories.items():
         keywords = category_data.get("keywords", [])
         keyword_matches = sum(1 for kw in keywords if kw in all_facts)
         if keyword_matches > 0:
             category_scores[category_name] = keyword_matches
-    
+
     detected_category = max(category_scores, key=category_scores.get) if category_scores else None
-    
+
     updated_facts = known_facts + [message]
     question_index = len(updated_facts) - 1
-    
-    # Get QA flow for category
+
     if detected_category and detected_category in qa_flows:
         questions = qa_flows[detected_category]
-        
+
         if question_index < len(questions):
-            response = f"Thanks for that information. {questions[question_index]}"
+            response = (
+                f"Thanks for the extra detail. Based on what you've shared, this looks like a {detected_category.lower()} issue. "
+                f"{questions[question_index]}"
+            )
         else:
-            # Have enough info - provide summary
             category_data = categories.get(detected_category, {})
             solutions = category_data.get("solutions", []) if isinstance(category_data, dict) else []
-            
+
             if category_data.get("safety_concern"):
                 response = (
-                    f"🚨 **Safety Alert** - This {detected_category} issue may involve a safety concern.\n\n"
-                    f"Your situation:\n• {updated_facts[-1]}\n\n"
-                    f"Recommended action: Please stop using the device and contact support immediately for a safety evaluation."
+                    "We take this seriously and the symptoms you described could indicate a safety-related issue. "
+                    "Please stop using the product and contact support immediately so we can assess it safely and arrange the correct next step."
                 )
             elif solutions:
+                solution_lines = " ".join(f"{sol}" for sol in solutions[:2])
                 response = (
-                    f"✅ **Issue Summary**: {detected_category}\n\n"
-                    f"Recommended solutions:\n"
-                    + "\n".join(f"• {sol}" for sol in solutions[:2]) +
-                    f"\n\nDeveloper will now investigate this issue."
+                    f"Thank you for walking us through that. The pattern in your report suggests a {detected_category.lower()} issue, and the most likely next steps are: {solution_lines}. "
+                    "Our engineering team will review the details and confirm the best fix path."
                 )
             else:
                 response = (
-                    f"✅ **I have enough information** about your {detected_category} issue.\n"
-                    f"The developer will investigate and create a solution plan."
+                    f"Thank you for the detail. We now have enough information to treat this as a {detected_category.lower()} issue, and the engineering team will review the report and build a fix plan."
                 )
     else:
-        response = "Thanks for that detail. Could you tell us when this issue started and what were you doing at that time?"
-    
+        response = "Thank you for that detail. Could you tell us when this issue began and what you were doing at the moment it happened?"
+
     return {
         "response": response,
         "known_facts": updated_facts,

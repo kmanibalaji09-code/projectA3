@@ -38,7 +38,7 @@ def seed():
         headphones = models.Product(
             id="PROD-1001",
             title="Smart Wireless Headphones",
-            description="Noise-cancelling wireless headphones with 30-hour battery life.",
+            description="Noise-cancelling wireless headphones with 30-hour battery life and premium travel comfort.",
             price=129.99,
             category="Audio",
             rating=4.2,
@@ -48,14 +48,34 @@ def seed():
         speaker = models.Product(
             id="PROD-1002",
             title="Portable Bluetooth Speaker",
-            description="Compact speaker with rich bass and IPX7 water resistance.",
+            description="Compact speaker with rich bass, IPX7 water resistance, and easy room-filling sound for daily use.",
             price=59.99,
             category="Audio",
             rating=4.6,
             image_url="https://images.unsplash.com/photo-1608043152269-423dbba4e7e1",
             status=models.ProductStatus.PUBLISHED,
         )
-        db.add_all([headphones, speaker])
+        air_purifier = models.Product(
+            id="PROD-1003",
+            title="Air Purifier Pro",
+            description="HEPA air purifier with quiet operation, auto mode, and a design made for bedrooms and small offices.",
+            price=149.99,
+            category="Home",
+            rating=4.5,
+            image_url="https://images.unsplash.com/photo-1581578731548-c64695cc6952",
+            status=models.ProductStatus.PUBLISHED,
+        )
+        espresso = models.Product(
+            id="PROD-1004",
+            title="Portable Espresso Maker",
+            description="Fast-heating espresso device for compact homes, small offices, and on-the-go routines.",
+            price=119.99,
+            category="Kitchen",
+            rating=4.3,
+            image_url="https://images.unsplash.com/photo-1511920170033-f8396924c348",
+            status=models.ProductStatus.PUBLISHED,
+        )
+        db.add_all([headphones, speaker, air_purifier, espresso])
         db.flush()
 
         review = models.Review(
@@ -72,12 +92,49 @@ def seed():
             emotion="Frustrated",
             severity=models.Severity.HIGH,
             category="Battery / Charging",
-            root_cause="Possible battery degradation / charging controller issue",
+            root_cause="This pattern often points to battery degradation or a charging-control fault that should be investigated.",
             safety_concern=True,
             confidence=0.82,
             missing_information=["Usage patterns", "Charging habits"],
         )
-        db.add(review)
+        review_2 = models.Review(
+            id="REV-2002",
+            product_id=air_purifier.id,
+            user_id=customer.id,
+            rating=5,
+            review_text=(
+                "The purifier is quiet enough for my bedroom and the air feels noticeably fresher after just one day. "
+                "The auto mode and filter alerts are especially helpful for routine maintenance."
+            ),
+            status=models.ReviewStatus.PUBLISHED,
+            sentiment=models.Sentiment.POSITIVE,
+            emotion="Satisfied",
+            severity=models.Severity.LOW,
+            category="Indoor Air Quality",
+            root_cause="Positive product experience with clear value and strong usability feedback.",
+            safety_concern=False,
+            confidence=0.91,
+            missing_information=["Room size", "Filter replacement schedule"],
+        )
+        review_3 = models.Review(
+            id="REV-2003",
+            product_id=espresso.id,
+            user_id=customer.id,
+            rating=3,
+            review_text=(
+                "The espresso is compact and easy to use, but the machine needs a few extra minutes to stabilize before brewing and the steam wand is louder than expected."
+            ),
+            status=models.ReviewStatus.PUBLISHED,
+            sentiment=models.Sentiment.NEUTRAL,
+            emotion="Mixed",
+            severity=models.Severity.MEDIUM,
+            category="Kitchen / Heating",
+            root_cause="The review suggests a warm-up delay and noise issue rather than a complete product failure.",
+            safety_concern=False,
+            confidence=0.76,
+            missing_information=["Water temperature", "Usage frequency"],
+        )
+        db.add_all([review, review_2, review_3])
         db.flush()
 
         case = models.CustomerCase(

@@ -65,7 +65,7 @@ export function Login() {
         </div>
 
         <p className="mt-4 text-center text-xs text-ink-400">
-          Backend API: http://127.0.0.1:8000
+          Backend API: https://project-a3-vgr4.vercel.app
         </p>
       </div>
     </div>
